@@ -96,6 +96,7 @@ void Terrain3DInstancer::add_instances(Vector3 p_global_position, real_t p_radiu
 	if (p_count <= 0) {
 		return;
 	}
+	LOG(DEBUG, "Adding ", p_count, " instances at ", p_global_position);
 
 	TypedArray<Transform3D> xforms;
 
@@ -150,6 +151,7 @@ void Terrain3DInstancer::add_instances(Vector3 p_global_position, real_t p_radiu
 }
 
 void Terrain3DInstancer::remove_instances(Vector3 p_global_position, real_t p_radius, uint32_t p_count) {
+	LOG(DEBUG, "Removing ", p_count, " instances from ", p_global_position);
 	TypedArray<Transform3D> xforms;
 	for (int i = 0; i < _multimesh->get_instance_count(); i++) {
 		Transform3D t = _multimesh->get_instance_transform(i);

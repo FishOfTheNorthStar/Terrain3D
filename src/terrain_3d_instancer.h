@@ -6,20 +6,16 @@
 #include <godot_cpp/classes/multi_mesh.hpp>
 #include <godot_cpp/classes/multi_mesh_instance3d.hpp>
 
+#include "constants.h"
+
 using namespace godot;
 
 class Terrain3D;
 
 class Terrain3DInstancer : public Resource {
 	GDCLASS(Terrain3DInstancer, Resource);
+	CLASS_NAME();
 
-public:
-	// Constants
-	static inline const char *__class__ = "Terrain3DInstancer";
-
-	//static inline const int MAX_INSTANCE_TYPES = 128;
-
-private:
 	Terrain3D *_terrain = nullptr;
 
 	MultiMeshInstance3D *_multimesh_instance = nullptr;
