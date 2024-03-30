@@ -3,7 +3,7 @@
 	<brief_description>
 	</brief_description>
 	<description>
-		A set of texture files and settings that gets added to [Terrain3DTextureList]. Textures must be prepared according to the [url=../docs/texture_prep.html]documentation[/url].
+		A set of texture files and settings that gets added to a [Terrain3DAssets] resource. Textures must be prepared according to the [url=../docs/texture_prep.html]documentation[/url].
 	</description>
 	<tutorials>
 	</tutorials>

@@ -28,6 +28,8 @@ Resources
     :name: toc-class-ref-resources
 
     class_resource
+    class_terrain3dassets
+    class_terrain3dinstancer
     class_terrain3dmaterial
     class_terrain3dstorage
     class_terrain3dtexture

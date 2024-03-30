@@ -17,7 +17,7 @@ Terrain3DTexture
 Description
 -----------
 
-A set of texture files and settings that gets added to :ref:`Terrain3DTextureList<class_Terrain3DTextureList>`. Textures must be prepared according to the `documentation <../docs/texture_prep.html>`__.
+A set of texture files and settings that gets added to a :ref:`Terrain3DAssets<class_Terrain3DAssets>` resource. Textures must be prepared according to the `documentation <../docs/texture_prep.html>`__.
 
 .. rst-class:: classref-reftable-group
 
