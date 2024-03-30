@@ -4,7 +4,7 @@
 #define TERRAIN3D_TEXTURE_LIST_CLASS_H
 
 #include "constants.h"
-#include "generated_tex.h"
+#include "generated_texture.h"
 #include "terrain_3d_texture.h"
 
 using namespace godot;
@@ -19,8 +19,8 @@ public: // Constants
 private:
 	TypedArray<Terrain3DTexture> _textures;
 
-	GeneratedTex _generated_albedo_textures;
-	GeneratedTex _generated_normal_textures;
+	GeneratedTexture _generated_albedo_textures;
+	GeneratedTexture _generated_normal_textures;
 
 	void _swap_textures(int p_old_id, int p_new_id);
 	void _update_texture_files();
