@@ -80,9 +80,9 @@ func _edit(p_object: Object) -> void:
 		terrain.add_gizmo(region_gizmo)
 		terrain.set_plugin(self)
 		
-		if not terrain.texture_list_changed.is_connected(_load_textures):
-			terrain.texture_list_changed.connect(_load_textures)
-		_load_textures()
+		if not terrain.assets_changed.is_connected(_load_assets):
+			terrain.assets_changed.connect(_load_assets)
+		_load_assets()
 		if not terrain.storage_changed.is_connected(_load_storage):
 			terrain.storage_changed.connect(_load_storage)
 		_load_storage()
@@ -280,23 +280,23 @@ func update_region_grid() -> void:
 	region_gizmo.grid = [Vector2i.ZERO]
 
 
-func _load_textures() -> void:
-	if terrain and terrain.texture_list:
-		if not terrain.texture_list.textures_changed.is_connected(update_asset_dock):
-			terrain.texture_list.textures_changed.connect(update_asset_dock)
+func _load_assets() -> void:
+	if terrain and terrain.assets:
+		if not terrain.assets.textures_changed.is_connected(update_asset_dock):
+			terrain.assets.textures_changed.connect(update_asset_dock)
 		update_asset_dock(Array())				
 
 
 func update_asset_dock(p_args: Array) -> void:
 	asset_dock.clear()
 	
-	if is_terrain_valid() and terrain.texture_list:
-		var texture_count: int = terrain.texture_list.get_texture_count()
+	if is_terrain_valid() and terrain.assets:
+		var texture_count: int = terrain.assets.get_texture_count()
 		for i in texture_count:
-			var texture: Terrain3DTexture = terrain.texture_list.get_texture(i)
+			var texture: Terrain3DTexture = terrain.assets.get_texture(i)
 			asset_dock.add_item(texture)
 			
-		if texture_count < Terrain3DTextureList.MAX_TEXTURES:
+		if texture_count < Terrain3DAssets.MAX_TEXTURES:
 			asset_dock.add_item()
 
 
@@ -319,7 +319,7 @@ func _on_asset_dock_resource_changed(p_texture: Resource, p_index: int) -> void:
 		if not p_texture and p_index == asset_dock.get_selected_index() and \
 				asset_dock.get_selected_index() == asset_dock.entries.size() - 2:
 			get_editor_interface().inspect_object(null)			
-		terrain.get_texture_list().set_texture(p_index, p_texture)
+		terrain.get_assets().set_texture(p_index, p_texture)
 
 
 func _on_asset_dock_resource_selected() -> void:

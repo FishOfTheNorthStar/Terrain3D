@@ -32,7 +32,7 @@
 int Terrain3D::debug_level{ ERROR };
 
 void Terrain3D::_initialize() {
-	LOG(INFO, "Checking instancer, material, storage, texture_list, signal, and mesh initialization");
+	LOG(INFO, "Checking instancer, material, storage, assets, signal, and mesh initialization");
 
 	// Make blank objects if needed
 	if (_material.is_null()) {
@@ -44,9 +44,9 @@ void Terrain3D::_initialize() {
 		_storage.instantiate();
 		_storage->set_version(Terrain3DStorage::CURRENT_VERSION);
 	}
-	if (_texture_list.is_null()) {
+	if (_assets.is_null()) {
 		LOG(DEBUG, "Creating blank texture list");
-		_texture_list.instantiate();
+		_assets.instantiate();
 	}
 	if (_instancer.is_null()) {
 		LOG(DEBUG, "Creating blank instancer");
@@ -54,9 +54,9 @@ void Terrain3D::_initialize() {
 	}
 
 	// Connect signals
-	if (!_texture_list->is_connected("textures_changed", Callable(_material.ptr(), "_update_texture_arrays"))) {
-		LOG(DEBUG, "Connecting texture_list.textures_changed to _material->_update_texture_arrays()");
-		_texture_list->connect("textures_changed", Callable(_material.ptr(), "_update_texture_arrays"));
+	if (!_assets->is_connected("textures_changed", Callable(_material.ptr(), "_update_texture_arrays"))) {
+		LOG(DEBUG, "Connecting _assets.textures_changed to _material->_update_texture_arrays()");
+		_assets->connect("textures_changed", Callable(_material.ptr(), "_update_texture_arrays"));
 	}
 	if (!_storage->is_connected("region_size_changed", Callable(_material.ptr(), "_set_region_size"))) {
 		LOG(DEBUG, "Connecting region_size_changed signal to _material->_set_region_size()");
@@ -81,7 +81,7 @@ void Terrain3D::_initialize() {
 		_material->initialize(_storage->get_region_size());
 		_material->set_mesh_vertex_spacing(_mesh_vertex_spacing);
 		_storage->update_regions(true); // generate map arrays
-		_texture_list->update_list(); // generate texture arrays
+		_assets->update_list(); // generate texture arrays
 		_instancer->initialize(this);
 		_setup_mouse_picking();
 		_build(_mesh_lods, _mesh_size);
@@ -739,13 +739,13 @@ void Terrain3D::set_storage(const Ref<Terrain3DStorage> &p_storage) {
 	}
 }
 
-void Terrain3D::set_texture_list(const Ref<Terrain3DTextureList> &p_texture_list) {
-	if (_texture_list != p_texture_list) {
+void Terrain3D::set_assets(const Ref<Terrain3DAssets> &p_assets) {
+	if (_assets != p_assets) {
 		_clear(true, false, false); // +Mesh, -collision, -foliage
-		LOG(INFO, "Setting texture list");
-		_texture_list = p_texture_list;
+		LOG(INFO, "Setting asset list");
+		_assets = p_assets;
 		_initialize();
-		emit_signal("texture_list_changed");
+		emit_signal("assets_changed");
 	}
 }
 
@@ -1088,6 +1088,20 @@ PackedStringArray Terrain3D::_get_configuration_warnings() const {
 	return psa;
 }
 
+// DEPRECATED 0.9.2 - Remove later
+void Terrain3D::set_texture_list(const Ref<Terrain3DTextureList> &p_texture_list) {
+	if (p_texture_list.is_null()) {
+		LOG(ERROR, "Attempted to load & convert Terrain3DTextureList, but received null (perhaps an Terrain3DAssets). Reconnect manually.");
+		return;
+	}
+	LOG(WARN, "Loaded Terrain3DTextureList. Converting to Terrain3DAssets. Save this scene to complete.");
+	Ref<Terrain3DAssets> assets;
+	assets.instantiate();
+	assets->set_textures(p_texture_list->get_textures());
+	assets->take_over_path(p_texture_list->get_path());
+	set_assets(assets);
+}
+
 ///////////////////////////
 // Protected Functions
 ///////////////////////////
@@ -1160,10 +1174,10 @@ void Terrain3D::_notification(int p_what) {
 			} else {
 				_material->save();
 			}
-			if (!_texture_list.is_valid()) {
+			if (!_assets.is_valid()) {
 				LOG(DEBUG, "Save requested, but no valid texture list. Skipping");
 			} else {
-				_texture_list->save();
+				_assets->save();
 			}
 			if (!_instancer.is_valid()) {
 				LOG(DEBUG, "Save requested, but no valid instancer. Skipping");
@@ -1196,8 +1210,8 @@ void Terrain3D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_material"), &Terrain3D::get_material);
 	ClassDB::bind_method(D_METHOD("set_storage", "storage"), &Terrain3D::set_storage);
 	ClassDB::bind_method(D_METHOD("get_storage"), &Terrain3D::get_storage);
-	ClassDB::bind_method(D_METHOD("set_texture_list", "texture_list"), &Terrain3D::set_texture_list);
-	ClassDB::bind_method(D_METHOD("get_texture_list"), &Terrain3D::get_texture_list);
+	ClassDB::bind_method(D_METHOD("set_assets", "assets"), &Terrain3D::set_assets);
+	ClassDB::bind_method(D_METHOD("get_assets"), &Terrain3D::get_assets);
 
 	ClassDB::bind_method(D_METHOD("set_plugin", "plugin"), &Terrain3D::set_plugin);
 	ClassDB::bind_method(D_METHOD("get_plugin"), &Terrain3D::get_plugin);
@@ -1233,7 +1247,7 @@ void Terrain3D::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::STRING, "version", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_EDITOR | PROPERTY_USAGE_READ_ONLY), "", "get_version");
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "storage", PROPERTY_HINT_RESOURCE_TYPE, "Terrain3DStorage"), "set_storage", "get_storage");
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "material", PROPERTY_HINT_RESOURCE_TYPE, "Terrain3DMaterial"), "set_material", "get_material");
-	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "texture_list", PROPERTY_HINT_RESOURCE_TYPE, "Terrain3DTextureList"), "set_texture_list", "get_texture_list");
+	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "assets", PROPERTY_HINT_RESOURCE_TYPE, "Terrain3DAssets"), "set_assets", "get_assets");
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "instancer", PROPERTY_HINT_RESOURCE_TYPE, "Terrain3DInstancer"), "set_instancer", "get_instancer");
 
 	ADD_GROUP("Renderer", "render_");
@@ -1260,5 +1274,10 @@ void Terrain3D::_bind_methods() {
 	ADD_SIGNAL(MethodInfo("instancer_changed"));
 	ADD_SIGNAL(MethodInfo("material_changed"));
 	ADD_SIGNAL(MethodInfo("storage_changed"));
-	ADD_SIGNAL(MethodInfo("texture_list_changed"));
+	ADD_SIGNAL(MethodInfo("assets_changed"));
+
+	// DEPRECATED 0.9.2 - Remove later
+	ClassDB::bind_method(D_METHOD("set_texture_list", "texture_list"), &Terrain3D::set_texture_list);
+	ClassDB::bind_method(D_METHOD("get_texture_list"), &Terrain3D::get_texture_list);
+	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "texture_list", PROPERTY_HINT_RESOURCE_TYPE, "Terrain3DTextureList", PROPERTY_USAGE_NONE), "set_texture_list", "get_texture_list");
 }

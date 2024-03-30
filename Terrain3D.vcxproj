@@ -151,7 +151,7 @@
     <ClInclude Include="src\terrain_3d_material.h" />
     <ClInclude Include="src\terrain_3d_storage.h" />
     <ClInclude Include="src\terrain_3d_texture.h" />
-    <ClInclude Include="src\terrain_3d_texture_list.h" />
+    <ClInclude Include="src\terrain_3d_assets.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\generated_texture.cpp" />
@@ -163,7 +163,7 @@
     <ClCompile Include="src\terrain_3d_material.cpp" />
     <ClCompile Include="src\terrain_3d_storage.cpp" />
     <ClCompile Include="src\terrain_3d_texture.cpp" />
-    <ClCompile Include="src\terrain_3d_texture_list.cpp" />
+    <ClCompile Include="src\terrain_3d_assets.cpp" />
     <ClCompile Include="src\terrain_3d_util.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -226,9 +226,11 @@
   <ItemGroup>
     <Xml Include="doc\classes\Terrain3D.xml" />
     <Xml Include="doc\classes\Terrain3DEditor.xml" />
+    <Xml Include="doc\classes\Terrain3DInstancer.xml" />
     <Xml Include="doc\classes\Terrain3DMaterial.xml" />
     <Xml Include="doc\classes\Terrain3DStorage.xml" />
     <Xml Include="doc\classes\Terrain3DTexture.xml" />
+    <Xml Include="doc\classes\Terrain3DAssets.xml" />
     <Xml Include="doc\classes\Terrain3DTextureList.xml" />
     <Xml Include="doc\classes\Terrain3DUtil.xml" />
   </ItemGroup>

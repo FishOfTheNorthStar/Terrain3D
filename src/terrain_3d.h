@@ -12,10 +12,10 @@
 #include <godot_cpp/classes/sub_viewport.hpp>
 
 #include "constants.h"
+#include "terrain_3d_assets.h"
 #include "terrain_3d_instancer.h"
 #include "terrain_3d_material.h"
 #include "terrain_3d_storage.h"
-#include "terrain_3d_texture_list.h"
 
 using namespace godot;
 
@@ -36,7 +36,7 @@ class Terrain3D : public Node3D {
 	Ref<Terrain3DInstancer> _instancer;
 	Ref<Terrain3DMaterial> _material;
 	Ref<Terrain3DStorage> _storage;
-	Ref<Terrain3DTextureList> _texture_list;
+	Ref<Terrain3DAssets> _assets;
 
 	// Editor components
 	EditorPlugin *_plugin = nullptr;
@@ -119,8 +119,8 @@ public:
 	Ref<Terrain3DMaterial> get_material() const { return _material; }
 	void set_storage(const Ref<Terrain3DStorage> &p_storage);
 	Ref<Terrain3DStorage> get_storage() const { return _storage; }
-	void set_texture_list(const Ref<Terrain3DTextureList> &p_texture_list);
-	Ref<Terrain3DTextureList> get_texture_list() const { return _texture_list; }
+	void set_assets(const Ref<Terrain3DAssets> &p_assets);
+	Ref<Terrain3DAssets> get_assets() const { return _assets; }
 
 	// Editor components
 	void set_plugin(EditorPlugin *p_plugin);
@@ -161,6 +161,10 @@ public:
 
 	// Misc
 	PackedStringArray _get_configuration_warnings() const override;
+
+	// DEPRECATED 0.9.2 - Remove later
+	void set_texture_list(const Ref<Terrain3DTextureList> &p_texture_list);
+	Ref<Terrain3DTextureList> get_texture_list() { return Ref<Terrain3DTextureList>(); }
 
 protected:
 	void _notification(int p_what);

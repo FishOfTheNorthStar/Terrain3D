@@ -8,7 +8,6 @@
 
 #include "constants.h"
 #include "generated_texture.h"
-#include "terrain_3d_texture_list.h"
 #include "terrain_3d_util.h"
 
 class Terrain3D;
