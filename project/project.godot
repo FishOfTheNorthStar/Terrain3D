@@ -12,7 +12,7 @@ config_version=5
 
 config/name="Terrain3D"
 run/main_scene="res://demo/Demo.tscn"
-config/features=PackedStringArray("4.1")
+config/features=PackedStringArray("4.2")
 config/icon="res://icon.svg"
 
 [display]
@@ -78,5 +78,10 @@ occlusion_culling/use_occlusion_culling=true
 
 [terrain3d]
 
-config/dock_position=5
-config/dock_pinned=false
+config/dock_always_on_top=false
+config/dock_slot=8
+config/dock_tile_size=83.0
+config/dock_floating=false
+config/dock_always_on_top=true
+config/dock_window_size=Vector2i(512, 512)
+config/dock_window_position=Vector2i(704, 284)
