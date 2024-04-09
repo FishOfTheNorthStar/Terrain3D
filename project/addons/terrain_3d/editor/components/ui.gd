@@ -174,7 +174,7 @@ func _on_setting_changed() -> void:
 		"size": int(toolbar_settings.get_setting("size")),
 		"strength": toolbar_settings.get_setting("strength") / 100.0,
 		"height": toolbar_settings.get_setting("height"),
-		"texture_index": plugin.asset_dock.get_selected_index(),
+		"texture_index": plugin.asset_dock.texture_list.get_selected_index(),
 		"color": toolbar_settings.get_setting("color"),
 		"roughness": toolbar_settings.get_setting("roughness"),
 		"gradient_points": toolbar_settings.get_setting("gradient_points"),

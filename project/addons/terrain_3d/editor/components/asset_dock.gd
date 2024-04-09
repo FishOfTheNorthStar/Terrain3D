@@ -8,12 +8,8 @@ extends PanelContainer
 # grab focus too aggressive if not pinned and window in front, alt+tab
 # pin and slider reverse position from bottom
 # right-click edit material, then click terrain3d and it triggers double click (edit or focus)
+# Changing IDs loses inspector editing
 
-
-# Replace these with function calls
-signal resource_changed(resource: Resource, index: int)
-signal resource_inspected(resource: Resource)
-signal resource_selected
 
 const PS_DOCK_SLOT: String = "terrain3d/config/dock_slot"
 const PS_DOCK_TILE_SIZE: String = "terrain3d/config/dock_tile_size"
@@ -22,10 +18,10 @@ const PS_DOCK_PINNED: String = "terrain3d/config/dock_always_on_top"
 const PS_DOCK_WINDOW_POSITION: String = "terrain3d/config/dock_window_position"
 const PS_DOCK_WINDOW_SIZE: String = "terrain3d/config/dock_window_size"
 
-var list: ListContainer
-var entries: Array[ListEntry]
-var selected_index: int = 0
-var focus_style: StyleBox
+var texture_list: ListContainer
+var mesh_list: ListContainer
+var _current_list: ListContainer
+
 
 var placement_opt: OptionButton
 var floating_btn: Button
@@ -81,16 +77,12 @@ func _ready() -> void:
 	
 	# Setup styles
 	set("theme_override_styles/panel", get_theme_stylebox("panel", "Panel"))
-	focus_style = get_theme_stylebox("focus", "Button").duplicate()
-	focus_style.set_border_width_all(2)
-	focus_style.set_border_color(Color(1, 1, 1, .67))
 	# Avoid saving icon resources in tscn when editing w/ a tool script
 	if plugin.get_editor_interface().get_edited_scene_root() != self:
 		pinned_btn.icon = get_theme_icon("Pin", "EditorIcons")
 		pinned_btn.text = ""
 		floating_btn.icon = get_theme_icon("MakeFloating", "EditorIcons")
 		floating_btn.text = ""
-
 
 	
 func initialize(p_plugin: EditorPlugin) -> void:
@@ -111,8 +103,14 @@ func initialize(p_plugin: EditorPlugin) -> void:
 	meshes_btn = $Box/Buttons/MeshesBtn
 	asset_container = $Box/ScrollContainer
 
-	list = ListContainer.new()
-	asset_container.add_child(list)
+	texture_list = ListContainer.new()
+	texture_list.plugin = plugin
+	asset_container.add_child(texture_list)
+	mesh_list = ListContainer.new()
+	mesh_list.plugin = plugin
+	mesh_list.visible = false
+	asset_container.add_child(mesh_list)
+	_current_list = texture_list
 
 	load_project_settings()
 
@@ -125,19 +123,13 @@ func initialize(p_plugin: EditorPlugin) -> void:
 	pinned_btn.toggled.connect(_on_pin_changed)
 	pinned_btn.visible = false
 	size_slider.value_changed.connect(_on_slider_changed)	
-	resource_changed.connect(_on_resource_changed)
-	resource_inspected.connect(_on_resource_inspected)
-	resource_selected.connect(_on_resource_selected)
 
 	print("Ready 4 Parent: ", get_parent(), ", state: ", state, ", slot: ", slot)
 	_initialized = true
 	print("initizalized, showing dock: ", plugin.visible)
-	update_assets()
 	update_dock(plugin.visible)
 	update_layout()
 	print("Ready 5 Parent: ", get_parent(), ", state: ", state)
-
-
 
 
 ## Window Management
@@ -325,7 +317,6 @@ func update_layout() -> void:
 	#print(self, "Updating layout. Slot: %d, State: %d, plugin: %s" % [ slot, state, plugin ])
 	if not _initialized:
 		return
-	print("update_layout: State: %d, slot: %d, parent: %s" % [ state, slot, get_parent().name ])
 
 	
 	# Take care here to detect if we have a new window (from Make floating)
@@ -376,16 +367,12 @@ func dump_project_settings() -> void:
 	
 func load_project_settings() -> void:
 	print("Loading project settings")
-	print("---- pre")
-	dump_project_settings()
 	floating_btn.button_pressed = ProjectSettings.get_setting(PS_DOCK_FLOATING, false)
 	pinned_btn.button_pressed = ProjectSettings.get_setting(PS_DOCK_PINNED, true)
 	size_slider.value = ProjectSettings.get_setting(PS_DOCK_TILE_SIZE, 83)
 	set_slot(ProjectSettings.get_setting(PS_DOCK_SLOT, POS_BOTTOM))
 	_on_slider_changed(size_slider.value)
 	# Window pos/size set on window creation in update_dock
-	print("---- post")
-	dump_project_settings()
 
 	update_dock(plugin.visible)
 	
@@ -404,8 +391,6 @@ func save_project_settings() -> void:
 		ProjectSettings.set_setting(PS_DOCK_WINDOW_POSITION, window.position)
 
 	ProjectSettings.save()
-	print("Saved project settings:")
-	dump_project_settings()
 
 
 ## Panel Button handlers
@@ -419,130 +404,47 @@ func _on_pin_changed(toggled: bool) -> void:
 
 func _on_slider_changed(value: float) -> void:
 	print("Slider changed: ", value)
-	if list:
-		list.set_entry_width(value)
+	if texture_list:
+		texture_list.set_entry_width(value)
+	if mesh_list:
+		mesh_list.set_entry_width(value)
 	save_project_settings()
 
 
 func _on_textures_pressed() -> void:
 	print("Textures pressed")
-	pass
+	_current_list = texture_list
+	texture_list.update_asset_list()
+	texture_list.visible = true
+	mesh_list.visible = false
 
 
 func _on_meshes_pressed() -> void:
 	print("Meshes pressed")
-	pass
+	_current_list = mesh_list
+	mesh_list.update_asset_list()
+	mesh_list.visible = true
+	texture_list.visible = false
 
 
-## Tile handlers
-
-func _on_resource_changed(p_texture: Resource, p_index: int) -> void:
-	print("Resource changed: ", p_texture, p_index)
-	if plugin.is_terrain_valid():
-		# If removing last entry and its selected, clear inspector
-		if not p_texture and p_index == get_selected_index() and \
-				get_selected_index() == entries.size() - 2:
-			plugin.get_editor_interface().inspect_object(null)			
-		plugin.terrain.get_assets().set_texture(p_index, p_texture)
+## Entry handlers
 
 
-func _on_resource_selected() -> void:
-	print(plugin, ": Resource selected----------")
-	plugin.select_terrain()
-
-	# If not on a texture painting tool, then switch to Paint
-	if plugin.editor.get_tool() != Terrain3DEditor.TEXTURE:
-		var paint_btn: Button = plugin.ui.toolbar.get_node_or_null("PaintBaseTexture")
-		if paint_btn:
-			paint_btn.set_pressed(true)
-			plugin.ui._on_tool_changed(Terrain3DEditor.TEXTURE, Terrain3DEditor.REPLACE)
-	plugin.ui._on_setting_changed()
-	print("Resource selected done")
-
-
-func _on_resource_inspected(p_texture: Resource) -> void:
-	print(plugin, ": Resource inspected: ", p_texture)
-	plugin.get_editor_interface().inspect_object(p_texture, "", true)
-	print("Resource inspected done")
-
-
-func update_assets(p_args: Array = Array()) -> void:
-	#print("update_assets, initizialized: ", _initialized, ", args: ", p_args)
-	
+func update_assets() -> void:
 	if not _initialized:
 		print(self, "update_assets, not initizialized, returning")
 		return
-
+	
+	# Verify signals to individual lists
 	if plugin.terrain and plugin.terrain.assets:
-		if not plugin.terrain.assets.textures_changed.is_connected(update_assets):
-			plugin.terrain.assets.textures_changed.connect(update_assets)
+		if not plugin.terrain.assets.textures_changed.is_connected(texture_list.update_asset_list):
+			plugin.terrain.assets.textures_changed.connect(texture_list.update_asset_list)
+		if not plugin.terrain.assets.textures_changed.is_connected(mesh_list.update_asset_list):
+			plugin.terrain.assets.textures_changed.connect(mesh_list.update_asset_list)
+		#if not plugin.terrain.assets.meshes_changed.is_connected(mesh_list.update_asset_list):
+			#plugin.terrain.assets.meshes_changed.connect(mesh_list.update_asset_list)
 
-	clear()
-	
-	if plugin.is_terrain_valid() and plugin.terrain.assets:
-		var texture_count: int = plugin.terrain.assets.get_texture_count()
-		for i in texture_count:
-			var texture: Terrain3DTexture = plugin.terrain.assets.get_texture(i)
-			add_item(texture)
-			
-		if texture_count < Terrain3DAssets.MAX_TEXTURES:
-			add_item()
-				
-
-func clear() -> void:
-	for i in entries:
-		i.get_parent().remove_child(i)
-		i.queue_free()
-	entries.clear()
-
-
-func add_item(p_resource: Resource = null) -> void:
-	var entry: ListEntry = ListEntry.new()
-	entry.focus_style = focus_style
-	var index: int = entries.size()
-	
-	entry.set_edited_resource(p_resource)
-	entry.selected.connect(set_selected_index.bind(index))
-	entry.inspected.connect(notify_resource_inspected)
-	entry.changed.connect(notify_resource_changed.bind(index))
-	
-	if p_resource:
-		entry.set_selected(index == selected_index)
-		if not p_resource.id_changed.is_connected(set_selected_after_swap):
-			p_resource.id_changed.connect(set_selected_after_swap)
-	
-	list.add_child(entry)
-	entries.push_back(entry)
-
-
-func set_selected_after_swap(p_old_index: int, p_new_index: int) -> void:
-	set_selected_index(clamp(p_new_index, 0, entries.size() - 2))
-
-
-func set_selected_index(p_index: int) -> void:
-	selected_index = p_index
-	emit_signal("resource_selected")
-	
-	for i in entries.size():
-		var entry: ListEntry = entries[i]
-		entry.set_selected(i == selected_index)
-
-
-func get_selected_index() -> int:
-	return selected_index
-
-
-func notify_resource_inspected(p_resource: Resource) -> void:
-	emit_signal("resource_inspected", p_resource)
-
-
-func notify_resource_changed(p_resource: Resource, p_index: int) -> void:
-	emit_signal("resource_changed", p_resource, p_index)
-	if !p_resource:
-		var last_offset: int = 2
-		if p_index == entries.size()-2:
-			last_offset = 3
-		selected_index = clamp(selected_index, 0, entries.size() - last_offset)	
+	_current_list.update_asset_list()
 
 
 ##############################################################
@@ -551,23 +453,95 @@ func notify_resource_changed(p_resource: Resource, p_index: int) -> void:
 
 	
 class ListContainer extends Container:
+	var entries: Array[ListEntry]
 	var height: float = 0
 	var width: float = 83
+	var plugin: EditorPlugin
+	var selected_index: int = 0
+
+	var focus_style: StyleBox
 
 	
 	func _ready() -> void:
 			set_v_size_flags(SIZE_EXPAND_FILL)
 			set_h_size_flags(SIZE_EXPAND_FILL)
+			focus_style = get_theme_stylebox("focus", "Button").duplicate()
+			focus_style.set_border_width_all(2)
+			focus_style.set_border_color(Color(1, 1, 1, .67))
 
 
-	func get_entry_width() -> float:
-		return width
+	func clear() -> void:
+		for e in entries:
+			e.get_parent().remove_child(e)
+			e.queue_free()
+		entries.clear()
 
+
+	func update_asset_list(p_args: Array = Array()) -> void:
+		print(self, ": update_asset_list")
+
+		clear()
+		
+		if plugin.is_terrain_valid() and plugin.terrain.assets:
+			var texture_count: int = plugin.terrain.assets.get_texture_count()
+			for i in texture_count:
+				var texture: Terrain3DTexture = plugin.terrain.assets.get_texture(i)
+				print("UA: adding texture")
+				add_item(texture)
+				
+			if texture_count < Terrain3DAssets.MAX_TEXTURES:
+				print("UA: adding blank")
+				add_item()
+				
+
+	func add_item(p_resource: Resource = null) -> void:
+		print("LC: Adding item: ", p_resource)
+		var entry: ListEntry = ListEntry.new()
+		entry.focus_style = focus_style
+		var index: int = entries.size()
+		
+		entry.set_edited_resource(p_resource)
+		entry.selected.connect(set_selected_index.bind(index))
+		#entry.inspected.connect(notify_resource_inspected)
+		entry.inspected.connect(_on_resource_inspected)
+		#entry.changed.connect(notify_resource_changed.bind(index))
+		entry.changed.connect(notify_resource_changed.bind(index))
+		
+		if p_resource:
+			entry.set_selected(index == selected_index)
+			if not p_resource.id_changed.is_connected(set_selected_after_swap):
+				p_resource.id_changed.connect(set_selected_after_swap)
+		
+		add_child(entry)
+		entries.push_back(entry)
 	
+	
+	func set_selected_after_swap(p_old_index: int, p_new_index: int) -> void:
+		set_selected_index(clamp(p_new_index, 0, entries.size() - 2))
+
+
+	func set_selected_index(p_index: int) -> void:
+		selected_index = p_index
+		#emit_signal("resource_selected")
+		_on_resource_selected()
+		
+		for i in entries.size():
+			var entry: ListEntry = entries[i]
+			entry.set_selected(i == selected_index)
+
+
+	func get_selected_index() -> int:
+		return selected_index
+
+
 	func set_entry_width(value: float) -> void:
 		width = clamp(value, 56, 256)
 		redraw()
 
+
+	func get_entry_width() -> float:
+		return width
+	
 
 	func redraw() -> void:
 		height = 0
@@ -583,6 +557,47 @@ class ListContainer extends Container:
 					Vector2(separation / columns, separation / columns)
 				height = max(height, c.position.y + width)
 				index += 1
+
+
+	func _on_resource_selected() -> void:
+		print(plugin, ": Resource selected----------")
+		plugin.select_terrain()
+
+		# If not on a texture painting tool, then switch to Paint
+		if plugin.editor.get_tool() != Terrain3DEditor.TEXTURE:
+			var paint_btn: Button = plugin.ui.toolbar.get_node_or_null("PaintBaseTexture")
+			if paint_btn:
+				paint_btn.set_pressed(true)
+				plugin.ui._on_tool_changed(Terrain3DEditor.TEXTURE, Terrain3DEditor.REPLACE)
+		plugin.ui._on_setting_changed()
+		print("Resource selected done")
+
+
+	func _on_resource_inspected(p_texture: Resource) -> void:
+		print(plugin, ": Resource inspected: ", p_texture)
+		plugin.get_editor_interface().inspect_object(p_texture, "", true)
+		print("Resource inspected done")
+	
+	
+	func notify_resource_changed(p_resource: Resource, p_index: int) -> void:
+		#emit_signal("resource_changed", p_resource, p_index)
+		_on_resource_changed(p_resource, p_index)
+		if !p_resource:
+			var last_offset: int = 2
+			if p_index == entries.size()-2:
+				last_offset = 3
+			selected_index = clamp(selected_index, 0, entries.size() - last_offset)	
+
+
+
+	func _on_resource_changed(p_texture: Resource, p_index: int) -> void:
+		print("Resource changed: ", p_texture, p_index)
+		if plugin.is_terrain_valid():
+			# If removing last entry and its selected, clear inspector
+			if not p_texture and p_index == get_selected_index() and \
+					get_selected_index() == entries.size() - 2:
+				plugin.get_editor_interface().inspect_object(null)			
+			plugin.terrain.get_assets().set_texture(p_index, p_texture)
 
 
 	func _get_minimum_size() -> Vector2:

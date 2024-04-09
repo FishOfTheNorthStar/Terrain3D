@@ -65,9 +65,11 @@ func _edit(p_object: Object) -> void:
 		terrain.add_gizmo(region_gizmo)
 		terrain.set_plugin(self)
 		
+		# Connect to new Assets resource
 		if not terrain.assets_changed.is_connected(asset_dock.update_assets):
 			terrain.assets_changed.connect(asset_dock.update_assets)
 		asset_dock.update_assets()
+		# Connect to new Storage resource
 		if not terrain.storage_changed.is_connected(_load_storage):
 			terrain.storage_changed.connect(_load_storage)
 		_load_storage()

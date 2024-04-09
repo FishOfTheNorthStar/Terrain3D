@@ -25,6 +25,7 @@ theme_override_font_sizes/font_size = 16
 text = "Textures"
 
 [node name="MeshesBtn" type="Button" parent="Box/Buttons"]
+visible = false
 custom_minimum_size = Vector2(80, 30)
 layout_mode = 2
 size_flags_horizontal = 3
