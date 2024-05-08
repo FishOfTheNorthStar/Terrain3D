@@ -40,6 +40,7 @@ uniform uint _background_mode = 1u;  // NONE = 0, FLAT = 1, NOISE = 2
 uniform uint _mouse_layer = 0x80000000u; // Layer 32
 
 // Public uniforms
+uniform float vertex_normals_distance : hint_range(0, 1024) = 128.0;
 uniform bool height_blending = true;
 uniform float blend_sharpness : hint_range(0, 1) = 0.87;
 //INSERT: AUTO_SHADER_UNIFORMS
@@ -65,10 +66,12 @@ struct Material {
 
 varying flat vec3 v_vertex;	// World coordinate vertex location
 varying flat vec3 v_camera_pos;
-varying flat float v_vertex_dist;
+varying float v_vertex_xz_dist;
 varying flat ivec3 v_region;
 varying flat vec2 v_uv_offset;
 varying flat vec2 v_uv2_offset;
+varying vec3 v_normal;
+varying float v_region_border_mask;
 
 ////////////////////////
 // Vertex
@@ -113,33 +116,43 @@ float get_height(vec2 uv) {
 
 void vertex() {
 	// Get camera pos in world vertex coords
-    v_camera_pos = INV_VIEW_MATRIX[3].xyz;
+	v_camera_pos = INV_VIEW_MATRIX[3].xyz;
 
 	// Get vertex of flat plane in world coordinates and set world UV
 	v_vertex = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
-	
+
+	// Camera distance to vertex on flat plane
+	v_vertex_xz_dist = length(v_vertex.xz - v_camera_pos.xz);
+
 	// UV coordinates in world space. Values are 0 to _region_size within regions
 	UV = round(v_vertex.xz * _mesh_vertex_density);
+
+	// UV coordinates in region space + texel offset. Values are 0 to 1 within regions
+	UV2 = (UV + vec2(0.5)) * _region_texel_size;
 
 	// Discard vertices for Holes. 1 lookup
 	v_region = get_region_uv(UV);
 	uint control = texelFetch(_control_maps, v_region, 0).r;
 	bool hole = bool(control >>2u & 0x1u);
+
 	// Show holes to all cameras except mouse camera (on exactly 1 layer)
 	if ( !(CAMERA_VISIBLE_LAYERS == _mouse_layer) && 
 			(hole || (_background_mode == 0u && v_region.z < 0)) ) {
 		VERTEX.x = 0./0.;
-	} else {
-		// UV coordinates in region space + texel offset. Values are 0 to 1 within regions
-		UV2 = (UV + vec2(0.5)) * _region_texel_size;
-
-		// Get final vertex location and save it
+	} else {		
+		// Set final vertex height & calculate vertex normals. 3 lookups.
 		VERTEX.y = get_height(UV2);
-		v_vertex = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
-		v_vertex_dist = length(v_vertex - v_camera_pos);
-//INSERT: DUAL_SCALING_VERTEX
+		v_vertex.y = VERTEX.y;
+		v_normal = vec3(
+			v_vertex.y - get_height(UV2 + vec2(_region_texel_size,0)),
+			_mesh_vertex_spacing,
+			v_vertex.y - get_height(UV2 + vec2(0,_region_texel_size))
+		);
+		// Due to a bug caused by the GPUs linear interpolation across edges of region maps,
+		// mask region edges and use vertex normals only across region boundaries.
+		v_region_border_mask = mod(UV.x+2.5,_region_size) - fract(UV.x) < 5.0 || mod(UV.y+2.5,_region_size) - fract(UV.y) < 5.0 ? 1. : 0.;
 	}
-
+		
 	// Transform UVs to local to avoid poor precision during varying interpolation.
 	v_uv_offset = MODEL_MATRIX[3].xz * _mesh_vertex_density;
 	UV -= v_uv_offset;
@@ -151,30 +164,19 @@ void vertex() {
 // Fragment
 ////////////////////////
 
-// 3 lookups
+// 0 - 3 lookups
 vec3 get_normal(vec2 uv, out vec3 tangent, out vec3 binormal) {
-	// Get the height of the current vertex
-	float height = get_height(uv);
-
-	// Get the heights to the right and in front, but because of hardware 
-	// interpolation on the edges of the heightmaps, the values are off
-	// causing the normal map to look weird. So, near the edges of the map
-	// get the heights to the left or behind instead. Hacky solution that 
-	// reduces the artifact, but doesn't fix it entirely. See #185.
-	float u, v;
-	if(mod(uv.y*_region_size, _region_size) > _region_size-2.) {
-		v = get_height(uv + vec2(0, -_region_texel_size)) - height;
+	float u, v, height;
+	vec3 normal;
+	// Use vertex normals within radius of vertex_normals_distance, and along region borders.
+	if (v_region_border_mask > 0.5 || v_vertex_xz_dist < vertex_normals_distance) {
+		normal = normalize(v_normal);
 	} else {
-		v = height - get_height(uv + vec2(0, _region_texel_size));
-	}
-	if(mod(uv.x*_region_size, _region_size) > _region_size-2.) {
-		u = get_height(uv + vec2(-_region_texel_size, 0)) - height;		
-	} else {
+		height = get_height(uv);
 		u = height - get_height(uv + vec2(_region_texel_size, 0));
+		v = height - get_height(uv + vec2(0, _region_texel_size));
+		normal = normalize(vec3(u, _mesh_vertex_spacing, v));
 	}
-
-	vec3 normal = vec3(u, _mesh_vertex_spacing, v);
-	normal = normalize(normal);
 	tangent = cross(normal, vec3(0, 0, 1));
 	binormal = cross(normal, tangent);
 	return normal;
@@ -364,8 +366,8 @@ void fragment() {
 	// Macro variation. 2 Lookups
 	float noise1 = texture(noise_texture, rotate(uv*noise1_scale*.1, cos(noise1_angle), sin(noise1_angle)) + noise1_offset).r;
 	float noise2 = texture(noise_texture, uv*noise2_scale*.1).r;
-	vec3 macrov = mix(macro_variation1, vec3(1.), clamp(noise1 + v_vertex_dist*.0002, 0., 1.));
-	macrov *= mix(macro_variation2, vec3(1.), clamp(noise2 + v_vertex_dist*.0002, 0., 1.));
+	vec3 macrov = mix(macro_variation1, vec3(1.), clamp(noise1 + v_vertex_xz_dist*.0002, 0., 1.));
+	macrov *= mix(macro_variation2, vec3(1.), clamp(noise2 + v_vertex_xz_dist*.0002, 0., 1.));
 
 	// Wetness/roughness modifier, converting 0-1 range to -1 to 1 range
 	float roughness = fma(color_map.a-0.5, 2.0, normal_rough.a);

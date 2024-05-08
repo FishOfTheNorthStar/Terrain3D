@@ -39,169 +39,162 @@ void Terrain3DTextureList::_update_texture_files() {
 	LOG(DEBUG, "Received texture_changed signal");
 	_generated_albedo_textures.clear();
 	_generated_normal_textures.clear();
-	_update_texture_data(true, false);
+	if (_textures.is_empty()) {
+		return;
+	}
+
+	// Detect image sizes and formats
+
+	LOG(INFO, "Validating texture sizes");
+	Vector2i albedo_size = Vector2i(0, 0);
+	Vector2i normal_size = Vector2i(0, 0);
+
+	Image::Format albedo_format = Image::FORMAT_MAX;
+	Image::Format normal_format = Image::FORMAT_MAX;
+	bool albedo_mipmaps = true;
+	bool normal_mipmaps = true;
+
+	for (int i = 0; i < _textures.size(); i++) {
+		Ref<Terrain3DTexture> texture_set = _textures[i];
+		if (texture_set.is_null()) {
+			continue;
+		}
+		Ref<Texture2D> albedo_tex = texture_set->get_albedo_texture();
+		Ref<Texture2D> normal_tex = texture_set->get_normal_texture();
+
+		// If this is the first texture, set expected size and format for the arrays
+		if (albedo_tex.is_valid()) {
+			Vector2i tex_size = albedo_tex->get_size();
+			if (albedo_size.length() == 0.0) {
+				albedo_size = tex_size;
+			} else if (tex_size != albedo_size) {
+				LOG(ERROR, "Texture ID ", i, " albedo size: ", tex_size, " doesn't match first texture: ", albedo_size);
+				return;
+			}
+			Ref<Image> img = albedo_tex->get_image();
+			Image::Format format = img->get_format();
+			if (albedo_format == Image::FORMAT_MAX) {
+				albedo_format = format;
+				albedo_mipmaps = img->has_mipmaps();
+			} else if (format != albedo_format) {
+				LOG(ERROR, "Texture ID ", i, " albedo format: ", format, " doesn't match first texture: ", albedo_format);
+				return;
+			}
+		}
+		if (normal_tex.is_valid()) {
+			Vector2i tex_size = normal_tex->get_size();
+			if (normal_size.length() == 0.0) {
+				normal_size = tex_size;
+			} else if (tex_size != normal_size) {
+				LOG(ERROR, "Texture ID ", i, " normal size: ", tex_size, " doesn't match first texture: ", normal_size);
+				return;
+			}
+			Ref<Image> img = normal_tex->get_image();
+			Image::Format format = img->get_format();
+			if (normal_format == Image::FORMAT_MAX) {
+				normal_format = format;
+				normal_mipmaps = img->has_mipmaps();
+			} else if (format != normal_format) {
+				LOG(ERROR, "Texture ID ", i, " normal format: ", format, " doesn't match first texture: ", normal_format);
+				return;
+			}
+		}
+	}
+
+	if (normal_size == Vector2i(0, 0)) {
+		normal_size = albedo_size;
+	} else if (albedo_size == Vector2i(0, 0)) {
+		albedo_size = normal_size;
+	}
+	if (albedo_size == Vector2i(0, 0)) {
+		albedo_size = Vector2i(1024, 1024);
+		normal_size = Vector2i(1024, 1024);
+	}
+
+	// Generate TextureArrays and replace nulls with a empty image
+
+	bool changed = false;
+	if (_generated_albedo_textures.is_dirty() && albedo_size != Vector2i(0, 0)) {
+		LOG(INFO, "Regenerating albedo texture array");
+		Array albedo_texture_array;
+		for (int i = 0; i < _textures.size(); i++) {
+			Ref<Terrain3DTexture> texture_set = _textures[i];
+			if (texture_set.is_null()) {
+				continue;
+			}
+			Ref<Texture2D> tex = texture_set->get_albedo_texture();
+			Ref<Image> img;
+
+			if (tex.is_null()) {
+				img = Util::get_filled_image(albedo_size, COLOR_CHECKED, albedo_mipmaps, albedo_format);
+				LOG(DEBUG, "ID ", i, " albedo texture is null. Creating a new one. Format: ", img->get_format());
+				texture_set->get_data()->_albedo_texture = ImageTexture::create_from_image(img);
+			} else {
+				img = tex->get_image();
+				LOG(DEBUG, "ID ", i, " albedo texture is valid. Format: ", img->get_format());
+			}
+			albedo_texture_array.push_back(img);
+		}
+		if (!albedo_texture_array.is_empty()) {
+			_generated_albedo_textures.create(albedo_texture_array);
+			changed = true;
+		}
+	}
+
+	if (_generated_normal_textures.is_dirty() && normal_size != Vector2i(0, 0)) {
+		LOG(INFO, "Regenerating normal texture arrays");
+
+		Array normal_texture_array;
+
+		for (int i = 0; i < _textures.size(); i++) {
+			Ref<Terrain3DTexture> texture_set = _textures[i];
+			if (texture_set.is_null()) {
+				continue;
+			}
+			Ref<Texture2D> tex = texture_set->get_normal_texture();
+			Ref<Image> img;
+
+			if (tex.is_null()) {
+				img = Util::get_filled_image(normal_size, COLOR_NORMAL, normal_mipmaps, normal_format);
+				LOG(DEBUG, "ID ", i, " normal texture is null. Creating a new one. Format: ", img->get_format());
+				texture_set->get_data()->_normal_texture = ImageTexture::create_from_image(img);
+			} else {
+				img = tex->get_image();
+				LOG(DEBUG, "ID ", i, " Normal texture is valid. Format: ", img->get_format());
+			}
+			normal_texture_array.push_back(img);
+		}
+		if (!normal_texture_array.is_empty()) {
+			_generated_normal_textures.create(normal_texture_array);
+			changed = true;
+		}
+	}
+
+	if (changed) {
+		emit_signal("textures_changed", Ref<Terrain3DTextureList>(this));
+	}
 }
 
 void Terrain3DTextureList::_update_texture_settings() {
 	LOG(DEBUG, "Received setting_changed signal");
-	_update_texture_data(false, true);
-}
-
-void Terrain3DTextureList::_update_texture_data(bool p_textures, bool p_settings) {
-	bool changed = false;
-	Array signal_args;
-
-	if (!_textures.is_empty() && p_textures) {
-		LOG(INFO, "Validating texture sizes");
-		Vector2i albedo_size = Vector2i(0, 0);
-		Vector2i normal_size = Vector2i(0, 0);
-
-		Image::Format albedo_format = Image::FORMAT_MAX;
-		Image::Format normal_format = Image::FORMAT_MAX;
-		bool albedo_mipmaps = true;
-		bool normal_mipmaps = true;
-
-		// Detect image sizes and formats
-		for (int i = 0; i < _textures.size(); i++) {
-			Ref<Terrain3DTexture> texture_set = _textures[i];
-			if (texture_set.is_null()) {
-				continue;
-			}
-			Ref<Texture2D> albedo_tex = texture_set->get_albedo_texture();
-			Ref<Texture2D> normal_tex = texture_set->get_normal_texture();
-
-			// If this is the first texture, set expected size and format for the arrays
-			if (albedo_tex.is_valid()) {
-				Vector2i tex_size = albedo_tex->get_size();
-				if (albedo_size.length() == 0.0) {
-					albedo_size = tex_size;
-				} else if (tex_size != albedo_size) {
-					LOG(ERROR, "Texture ID ", i, " albedo size: ", tex_size, " doesn't match first texture: ", albedo_size);
-					return;
-				}
-				Ref<Image> img = albedo_tex->get_image();
-				Image::Format format = img->get_format();
-				if (albedo_format == Image::FORMAT_MAX) {
-					albedo_format = format;
-					albedo_mipmaps = img->has_mipmaps();
-				} else if (format != albedo_format) {
-					LOG(ERROR, "Texture ID ", i, " albedo format: ", format, " doesn't match first texture: ", albedo_format);
-					return;
-				}
-			}
-			if (normal_tex.is_valid()) {
-				Vector2i tex_size = normal_tex->get_size();
-				if (normal_size.length() == 0.0) {
-					normal_size = tex_size;
-				} else if (tex_size != normal_size) {
-					LOG(ERROR, "Texture ID ", i, " normal size: ", tex_size, " doesn't match first texture: ", normal_size);
-					return;
-				}
-				Ref<Image> img = normal_tex->get_image();
-				Image::Format format = img->get_format();
-				if (normal_format == Image::FORMAT_MAX) {
-					normal_format = format;
-					normal_mipmaps = img->has_mipmaps();
-				} else if (format != normal_format) {
-					LOG(ERROR, "Texture ID ", i, " normal format: ", format, " doesn't match first texture: ", normal_format);
-					return;
-				}
-			}
-		}
-
-		if (normal_size == Vector2i(0, 0)) {
-			normal_size = albedo_size;
-		} else if (albedo_size == Vector2i(0, 0)) {
-			albedo_size = normal_size;
-		}
-		if (albedo_size == Vector2i(0, 0)) {
-			albedo_size = Vector2i(1024, 1024);
-			normal_size = Vector2i(1024, 1024);
-		}
-
-		// Generate TextureArrays and replace nulls with a empty image
-		if (_generated_albedo_textures.is_dirty() && albedo_size != Vector2i(0, 0)) {
-			LOG(INFO, "Regenerating albedo texture array");
-			Array albedo_texture_array;
-
-			for (int i = 0; i < _textures.size(); i++) {
-				Ref<Terrain3DTexture> texture_set = _textures[i];
-				if (texture_set.is_null()) {
-					continue;
-				}
-				Ref<Texture2D> tex = texture_set->get_albedo_texture();
-				Ref<Image> img;
-
-				if (tex.is_null()) {
-					img = Util::get_filled_image(albedo_size, COLOR_CHECKED, albedo_mipmaps, albedo_format);
-					LOG(DEBUG, "ID ", i, " albedo texture is null. Creating a new one. Format: ", img->get_format());
-					texture_set->get_data()->_albedo_texture = ImageTexture::create_from_image(img);
-				} else {
-					img = tex->get_image();
-					LOG(DEBUG, "ID ", i, " albedo texture is valid. Format: ", img->get_format());
-				}
-				albedo_texture_array.push_back(img);
-			}
-			if (!albedo_texture_array.is_empty()) {
-				_generated_albedo_textures.create(albedo_texture_array);
-				changed = true;
-			}
-		}
-
-		if (_generated_normal_textures.is_dirty() && normal_size != Vector2i(0, 0)) {
-			LOG(INFO, "Regenerating normal texture arrays");
-
-			Array normal_texture_array;
-
-			for (int i = 0; i < _textures.size(); i++) {
-				Ref<Terrain3DTexture> texture_set = _textures[i];
-				if (texture_set.is_null()) {
-					continue;
-				}
-				Ref<Texture2D> tex = texture_set->get_normal_texture();
-				Ref<Image> img;
-
-				if (tex.is_null()) {
-					img = Util::get_filled_image(normal_size, COLOR_NORMAL, normal_mipmaps, normal_format);
-					LOG(DEBUG, "ID ", i, " normal texture is null. Creating a new one. Format: ", img->get_format());
-					texture_set->get_data()->_normal_texture = ImageTexture::create_from_image(img);
-				} else {
-					img = tex->get_image();
-					LOG(DEBUG, "ID ", i, " Normal texture is valid. Format: ", img->get_format());
-				}
-				normal_texture_array.push_back(img);
-			}
-			if (!normal_texture_array.is_empty()) {
-				_generated_normal_textures.create(normal_texture_array);
-				changed = true;
-			}
-		}
+	if (_textures.is_empty()) {
+		return;
 	}
-	signal_args.push_back(_textures.size());
-	signal_args.push_back(_generated_albedo_textures.get_rid());
-	signal_args.push_back(_generated_normal_textures.get_rid());
+	LOG(INFO, "Updating terrain color and scale arrays");
+	_texture_colors.clear();
+	_texture_uv_scales.clear();
+	_texture_uv_rotations.clear();
 
-	if (!_textures.is_empty() && p_settings) {
-		LOG(INFO, "Updating terrain color and scale arrays");
-		PackedColorArray colors;
-		PackedFloat32Array uv_scales;
-		PackedFloat32Array uv_rotations;
-
-		for (int i = 0; i < _textures.size(); i++) {
-			Ref<Terrain3DTexture> texture_set = _textures[i];
-			if (texture_set.is_null()) {
-				continue;
-			}
-			colors.push_back(texture_set->get_albedo_color());
-			uv_scales.push_back(texture_set->get_uv_scale());
-			uv_rotations.push_back(texture_set->get_uv_rotation());
+	for (int i = 0; i < _textures.size(); i++) {
+		Ref<Terrain3DTexture> texture_set = _textures[i];
+		if (texture_set.is_null()) {
+			continue;
 		}
-		signal_args.push_back(colors);
-		signal_args.push_back(uv_scales);
-		signal_args.push_back(uv_rotations);
+		_texture_colors.push_back(texture_set->get_albedo_color());
+		_texture_uv_scales.push_back(texture_set->get_uv_scale());
+		_texture_uv_rotations.push_back(texture_set->get_uv_rotation());
 	}
-
-	emit_signal("textures_changed", signal_args);
+	emit_signal("textures_changed", Ref<Terrain3DTextureList>(this));
 }
 
 ///////////////////////////
@@ -225,18 +218,19 @@ void Terrain3DTextureList::update_list() {
 			LOG(ERROR, "Texture at index ", i, " is null, but shouldn't be.");
 			continue;
 		}
-		if (!texture_set->is_connected("file_changed", Callable(this, "_update_texture_files"))) {
+		if (!texture_set->is_connected("file_changed", callable_mp(this, &Terrain3DTextureList::_update_texture_files))) {
 			LOG(DEBUG, "Connecting file_changed signal");
-			texture_set->connect("file_changed", Callable(this, "_update_texture_files"));
+			texture_set->connect("file_changed", callable_mp(this, &Terrain3DTextureList::_update_texture_files));
 		}
-		if (!texture_set->is_connected("setting_changed", Callable(this, "_update_texture_settings"))) {
+		if (!texture_set->is_connected("setting_changed", callable_mp(this, &Terrain3DTextureList::_update_texture_settings))) {
 			LOG(DEBUG, "Connecting setting_changed signal");
-			texture_set->connect("setting_changed", Callable(this, "_update_texture_settings"));
+			texture_set->connect("setting_changed", callable_mp(this, &Terrain3DTextureList::_update_texture_settings));
 		}
 	}
 	_generated_albedo_textures.clear();
 	_generated_normal_textures.clear();
-	_update_texture_data(true, true);
+	_update_texture_files();
+	_update_texture_settings();
 }
 
 void Terrain3DTextureList::set_texture(int p_index, const Ref<Terrain3DTexture> &p_texture) {
@@ -263,9 +257,9 @@ void Terrain3DTextureList::set_texture(int p_index, const Ref<Terrain3DTexture> 
 		if (p_index >= get_texture_count()) {
 			p_texture->get_data()->_texture_id = get_texture_count();
 			_textures.push_back(p_texture);
-			if (!p_texture->is_connected("id_changed", Callable(this, "_swap_textures"))) {
+			if (!p_texture->is_connected("id_changed", callable_mp(this, &Terrain3DTextureList::_swap_textures))) {
 				LOG(DEBUG, "Connecting to id_changed");
-				p_texture->connect("id_changed", Callable(this, "_swap_textures"));
+				p_texture->connect("id_changed", callable_mp(this, &Terrain3DTextureList::_swap_textures));
 			}
 		} else {
 			// Else overwrite an existing slot
@@ -302,9 +296,9 @@ void Terrain3DTextureList::set_textures(const TypedArray<Terrain3DTexture> &p_te
 				}
 			}
 		}
-		if (!texture->is_connected("id_changed", Callable(this, "_swap_textures"))) {
+		if (!texture->is_connected("id_changed", callable_mp(this, &Terrain3DTextureList::_swap_textures))) {
 			LOG(DEBUG, "Connecting to id_changed");
-			texture->connect("id_changed", Callable(this, "_swap_textures"));
+			texture->connect("id_changed", callable_mp(this, &Terrain3DTextureList::_swap_textures));
 		}
 	}
 	update_list();
@@ -327,13 +321,6 @@ void Terrain3DTextureList::save() {
 ///////////////////////////
 
 void Terrain3DTextureList::_bind_methods() {
-	// Private, but Public workaround until callable_mp is implemented
-	// https://github.com/godotengine/godot-cpp/pull/1155
-	ClassDB::bind_method(D_METHOD("_swap_textures", "old_id", "new_id"), &Terrain3DTextureList::_swap_textures);
-	ClassDB::bind_method(D_METHOD("_update_texture_files"), &Terrain3DTextureList::_update_texture_files);
-	ClassDB::bind_method(D_METHOD("_update_texture_settings"), &Terrain3DTextureList::_update_texture_settings);
-
-	// Public
 	ClassDB::bind_method(D_METHOD("set_texture", "index", "texture"), &Terrain3DTextureList::set_texture);
 	ClassDB::bind_method(D_METHOD("get_texture", "index"), &Terrain3DTextureList::get_texture);
 	ClassDB::bind_method(D_METHOD("set_textures", "textures"), &Terrain3DTextureList::set_textures);

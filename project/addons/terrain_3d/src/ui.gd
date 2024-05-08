@@ -3,12 +3,11 @@ extends Node
 
 
 # Includes
-const Toolbar: Script = preload("res://addons/terrain_3d/editor/components/toolbar.gd")
-const ToolSettings: Script = preload("res://addons/terrain_3d/editor/components/tool_settings.gd")
-const TerrainTools: Script = preload("res://addons/terrain_3d/editor/components/terrain_tools.gd")
-const OperationBuilder: Script = preload("res://addons/terrain_3d/editor/components/operation_builder.gd")
-const GradientOperationBuilder: Script = preload("res://addons/terrain_3d/editor/components/gradient_operation_builder.gd")
-const RING1: String = "res://addons/terrain_3d/editor/brushes/ring1.exr"
+const Toolbar: Script = preload("res://addons/terrain_3d/src/toolbar.gd")
+const ToolSettings: Script = preload("res://addons/terrain_3d/src/tool_settings.gd")
+const TerrainTools: Script = preload("res://addons/terrain_3d/src/terrain_tools.gd")
+const OperationBuilder: Script = preload("res://addons/terrain_3d/src/operation_builder.gd")
+const GradientOperationBuilder: Script = preload("res://addons/terrain_3d/src/gradient_operation_builder.gd")
 const COLOR_RAISE := Color.WHITE
 const COLOR_LOWER := Color.BLACK
 const COLOR_SMOOTH := Color(0.5, 0, .1)
@@ -26,6 +25,8 @@ const COLOR_PICK_COLOR := Color.WHITE
 const COLOR_PICK_HEIGHT := Color.DARK_RED
 const COLOR_PICK_ROUGH := Color.ROYAL_BLUE
 
+const RING1: String = "res://addons/terrain_3d/brushes/ring1.exr"
+@onready var ring_texture := ImageTexture.create_from_image(Terrain3DUtil.black_to_alpha(Image.load_from_file(RING1)))
 
 var plugin: EditorPlugin # Actually Terrain3DEditorPlugin, but Godot still has CRC errors
 var toolbar: Toolbar
@@ -40,7 +41,6 @@ var decal_timer: Timer
 var gradient_decals: Array[Decal]
 var brush_data: Dictionary
 var operation_builder: OperationBuilder
-@onready var picker_texture: ImageTexture =  ImageTexture.create_from_image(Image.load_from_file(RING1))
 
 
 func _enter_tree() -> void:
@@ -98,84 +98,57 @@ func set_visible(p_visible: bool) -> void:
 func _on_tool_changed(p_tool: Terrain3DEditor.Tool, p_operation: Terrain3DEditor.Operation) -> void:
 	clear_picking()
 
-	# Select which settings to hide. Options in tool_settings.gd:_ready
-	var to_hide: PackedStringArray = []
+	# Select which settings to show. Options in tool_settings.gd:_ready
+	var to_show: PackedStringArray = []
 	
-	if p_tool == Terrain3DEditor.REGION:
-		to_hide.push_back("size")
-		to_hide.push_back("opacity")
-		to_hide.push_back("enable")
-		to_hide.push_back("color")
-		to_hide.push_back("color picker")
-		to_hide.push_back("roughness")
-		to_hide.push_back("roughness picker")
-		to_hide.push_back("height")
-		to_hide.push_back("height picker")
-		to_hide.push_back("slope")
-		to_hide.push_back("gradient_points")
-		to_hide.push_back("drawable")
-				
-	elif p_tool == Terrain3DEditor.HEIGHT:
-		to_hide.push_back("color")
-		to_hide.push_back("color picker")
-		to_hide.push_back("roughness")
-		to_hide.push_back("roughness picker")
-		to_hide.push_back("slope")
-		to_hide.push_back("enable")
-		if p_operation != Terrain3DEditor.REPLACE:
-			to_hide.push_back("height")
-			to_hide.push_back("height picker")
-		if p_operation != Terrain3DEditor.GRADIENT:
-			to_hide.push_back("gradient_points")
-			to_hide.push_back("drawable")
+	match p_tool:
+		Terrain3DEditor.HEIGHT:
+			to_show.push_back("brush")
+			to_show.push_back("size")
+			to_show.push_back("strength")
+			if p_operation == Terrain3DEditor.REPLACE:
+				to_show.push_back("height")
+				to_show.push_back("height_picker")
+			if p_operation == Terrain3DEditor.GRADIENT:
+				to_show.push_back("gradient_points")
+				to_show.push_back("drawable")
+		
+		Terrain3DEditor.TEXTURE:
+			to_show.push_back("brush")
+			to_show.push_back("size")
+			if p_operation == Terrain3DEditor.ADD:
+				to_show.push_back("strength")
 
-	elif p_tool == Terrain3DEditor.TEXTURE:
-		to_hide.push_back("height")
-		to_hide.push_back("height picker")
-		to_hide.push_back("gradient_points")
-		to_hide.push_back("drawable")
-		to_hide.push_back("color")
-		to_hide.push_back("color picker")
-		to_hide.push_back("roughness")
-		to_hide.push_back("roughness picker")
-		to_hide.push_back("slope")
-		to_hide.push_back("enable")
-		if p_operation == Terrain3DEditor.REPLACE:
-			to_hide.push_back("opacity")
+		Terrain3DEditor.COLOR:
+			to_show.push_back("brush")
+			to_show.push_back("size")
+			to_show.push_back("strength")
+			to_show.push_back("color")
+			to_show.push_back("color_picker")
 
-	elif p_tool == Terrain3DEditor.COLOR:
-		to_hide.push_back("height")
-		to_hide.push_back("height picker")
-		to_hide.push_back("gradient_points")
-		to_hide.push_back("drawable")
-		to_hide.push_back("roughness")
-		to_hide.push_back("roughness picker")
-		to_hide.push_back("slope")
-		to_hide.push_back("enable")
+		Terrain3DEditor.ROUGHNESS:
+			to_show.push_back("brush")
+			to_show.push_back("size")
+			to_show.push_back("strength")
+			to_show.push_back("roughness")
+			to_show.push_back("roughness_picker")
 
-	elif p_tool == Terrain3DEditor.ROUGHNESS:
-		to_hide.push_back("height")
-		to_hide.push_back("height picker")
-		to_hide.push_back("gradient_points")
-		to_hide.push_back("drawable")
-		to_hide.push_back("color")
-		to_hide.push_back("color picker")
-		to_hide.push_back("slope")
-		to_hide.push_back("enable")
+		Terrain3DEditor.AUTOSHADER, Terrain3DEditor.HOLES, Terrain3DEditor.NAVIGATION:
+			to_show.push_back("brush")
+			to_show.push_back("size")
+			to_show.push_back("enable")
 
-	elif p_tool in [ Terrain3DEditor.AUTOSHADER, Terrain3DEditor.HOLES, Terrain3DEditor.NAVIGATION ]:
-		to_hide.push_back("height")
-		to_hide.push_back("height picker")
-		to_hide.push_back("gradient_points")
-		to_hide.push_back("drawable")
-		to_hide.push_back("color")
-		to_hide.push_back("color picker")
-		to_hide.push_back("roughness")
-		to_hide.push_back("roughness picker")
-		to_hide.push_back("slope")
-		to_hide.push_back("opacity")
 
-	toolbar_settings.hide_settings(to_hide)
+		_:
+			pass
+
+	# Advanced menu settings
+	to_show.push_back("automatic_regions")
+	to_show.push_back("align_to_view")
+	to_show.push_back("show_cursor_while_painting")
+	to_show.push_back("gamma")
+	to_show.push_back("jitter")
+	toolbar_settings.show_settings(to_show)
 
 	operation_builder = null
 	if p_operation == Terrain3DEditor.GRADIENT:
@@ -187,30 +160,15 @@ func _on_tool_changed(p_tool: Terrain3DEditor.Tool, p_operation: Terrain3DEditor
 		plugin.editor.set_operation(p_operation)
 
 	_on_setting_changed()
+	plugin.update_region_grid()
 
 
 func _on_setting_changed() -> void:
 	if not plugin.asset_dock:
 		return
-	brush_data = {
-		"size": int(toolbar_settings.get_setting("size")),
-		"opacity": toolbar_settings.get_setting("opacity") / 100.0,
-		"height": toolbar_settings.get_setting("height"),
-		"texture_index": plugin.asset_dock.get_selected_index(),
-		"color": toolbar_settings.get_setting("color"),
-		"roughness": toolbar_settings.get_setting("roughness"),
-		"gradient_points": toolbar_settings.get_setting("gradient_points"),
-		"enable": toolbar_settings.get_setting("enable"),
-		"automatic_regions": toolbar_settings.get_setting("automatic_regions"),
-		"align_to_view": toolbar_settings.get_setting("align_to_view"),
-		"show_cursor_while_painting": toolbar_settings.get_setting("show_cursor_while_painting"),
-		"gamma": toolbar_settings.get_setting("gamma"),
-		"jitter": toolbar_settings.get_setting("jitter"),
-	}
-	var brush_imgs: Array = toolbar_settings.get_setting("brush")
-	brush_data["image"] = brush_imgs[0]
-	brush_data["texture"] = brush_imgs[1]
-	
+	brush_data = toolbar_settings.get_settings()
+	brush_data["strength"] /= 100.0
+	brush_data["texture_index"] = plugin.asset_dock.get_selected_index()
 	update_decal()
 	plugin.editor.set_brush_data(brush_data)
 
@@ -243,7 +201,7 @@ func update_decal() -> void:
 
 	# Set texture and color
 	if picking != Terrain3DEditor.TOOL_MAX:
-		decal.texture_albedo = picker_texture
+		decal.texture_albedo = ring_texture
 		decal.size = Vector3.ONE * 10. * plugin.terrain.get_mesh_vertex_spacing()
 		match picking:
 			Terrain3DEditor.HEIGHT:
@@ -254,7 +212,7 @@ func update_decal() -> void:
 				decal.modulate = COLOR_PICK_ROUGH
 		decal.modulate.a = 1.0
 	else:
-		decal.texture_albedo = brush_data["texture"]		
+		decal.texture_albedo = brush_data["brush"][1]
 		match plugin.editor.get_tool():
 			Terrain3DEditor.HEIGHT:
 				match plugin.editor.get_operation():
@@ -274,7 +232,7 @@ func update_decal() -> void:
 						decal.modulate = COLOR_SLOPE
 					_:
 						decal.modulate = Color.WHITE
-				decal.modulate.a = max(.3, brush_data["opacity"])
+				decal.modulate.a = max(.3, brush_data["strength"])
 			Terrain3DEditor.TEXTURE:
 				match plugin.editor.get_operation():
 					Terrain3DEditor.REPLACE:
@@ -282,15 +240,15 @@ func update_decal() -> void:
 						decal.modulate.a = 1.0
 					Terrain3DEditor.ADD:
 						decal.modulate = COLOR_SPRAY
-						decal.modulate.a = max(.3, brush_data["opacity"])
+						decal.modulate.a = max(.3, brush_data["strength"])
 					_:
 						decal.modulate = Color.WHITE
 			Terrain3DEditor.COLOR:
 				decal.modulate = brush_data["color"].srgb_to_linear()*.5
-				decal.modulate.a = max(.3, brush_data["opacity"])
+				decal.modulate.a = max(.3, brush_data["strength"])
 			Terrain3DEditor.ROUGHNESS:
 				decal.modulate = COLOR_ROUGHNESS
-				decal.modulate.a = max(.3, brush_data["opacity"])
+				decal.modulate.a = max(.3, brush_data["strength"])
 			Terrain3DEditor.AUTOSHADER:
 				decal.modulate = COLOR_AUTOSHADER
 				decal.modulate.a = 1.0
@@ -302,7 +260,7 @@ func update_decal() -> void:
 				decal.modulate.a = 1.0
 			_:
 				decal.modulate = Color.WHITE
-				decal.modulate.a = max(.3, brush_data["opacity"])
+				decal.modulate.a = max(.3, brush_data["strength"])
 	decal.size.y = max(1000, decal.size.y)
 	decal.albedo_mix = 1.0
 	decal.cull_mask = 1 << ( plugin.terrain.get_mouse_layer() - 1 )
@@ -327,7 +285,7 @@ func _get_gradient_decal(index: int) -> Decal:
 	
 	var gradient_decal := Decal.new()
 	gradient_decal = Decal.new()
-	gradient_decal.texture_albedo = picker_texture
+	gradient_decal.texture_albedo = ring_texture
 	gradient_decal.modulate = COLOR_SLOPE
 	gradient_decal.size = Vector3.ONE * 10. * plugin.terrain.get_mesh_vertex_spacing()
 	gradient_decal.size.y = 1000.

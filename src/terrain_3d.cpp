@@ -2,7 +2,6 @@
 
 #include <godot_cpp/classes/collision_shape3d.hpp>
 #include <godot_cpp/classes/editor_interface.hpp>
-#include <godot_cpp/classes/editor_script.hpp>
 #include <godot_cpp/classes/engine.hpp>
 #include <godot_cpp/classes/environment.hpp>
 #include <godot_cpp/classes/height_map_shape3d.hpp>
@@ -13,11 +12,9 @@
 #include <godot_cpp/classes/shader_material.hpp>
 #include <godot_cpp/classes/surface_tool.hpp>
 #include <godot_cpp/classes/time.hpp>
-#include <godot_cpp/classes/v_box_container.hpp> // for get_editor_main_screen()
 #include <godot_cpp/classes/viewport.hpp>
 #include <godot_cpp/classes/viewport_texture.hpp>
 #include <godot_cpp/classes/world3d.hpp>
-#include <godot_cpp/core/class_db.hpp>
 
 #include "geoclipmap.h"
 #include "logger.h"
@@ -50,21 +47,21 @@ void Terrain3D::_initialize() {
 	}
 
 	// Connect signals
-	if (!_texture_list->is_connected("textures_changed", Callable(_material.ptr(), "_update_texture_arrays"))) {
+	if (!_texture_list->is_connected("textures_changed", callable_mp(_material.ptr(), &Terrain3DMaterial::_update_texture_arrays))) {
 		LOG(DEBUG, "Connecting texture_list.textures_changed to _material->_update_texture_arrays()");
-		_texture_list->connect("textures_changed", Callable(_material.ptr(), "_update_texture_arrays"));
+		_texture_list->connect("textures_changed", callable_mp(_material.ptr(), &Terrain3DMaterial::_update_texture_arrays));
 	}
-	if (!_storage->is_connected("region_size_changed", Callable(_material.ptr(), "_set_region_size"))) {
+	if (!_storage->is_connected("region_size_changed", callable_mp(_material.ptr(), &Terrain3DMaterial::_set_region_size))) {
 		LOG(DEBUG, "Connecting region_size_changed signal to _material->_set_region_size()");
-		_storage->connect("region_size_changed", Callable(_material.ptr(), "_set_region_size"));
+		_storage->connect("region_size_changed", callable_mp(_material.ptr(), &Terrain3DMaterial::_set_region_size));
 	}
-	if (!_storage->is_connected("regions_changed", Callable(_material.ptr(), "_update_regions"))) {
+	if (!_storage->is_connected("regions_changed", callable_mp(_material.ptr(), &Terrain3DMaterial::_update_regions))) {
 		LOG(DEBUG, "Connecting regions_changed signal to _material->_update_regions()");
-		_storage->connect("regions_changed", Callable(_material.ptr(), "_update_regions"));
+		_storage->connect("regions_changed", callable_mp(_material.ptr(), &Terrain3DMaterial::_update_regions));
 	}
-	if (!_storage->is_connected("height_maps_changed", Callable(this, "update_aabbs"))) {
+	if (!_storage->is_connected("height_maps_changed", callable_mp(this, &Terrain3D::update_aabbs))) {
 		LOG(DEBUG, "Connecting height_maps_changed signal to update_aabbs()");
-		_storage->connect("height_maps_changed", Callable(this, "update_aabbs"));
+		_storage->connect("height_maps_changed", callable_mp(this, &Terrain3D::update_aabbs));
 	}
 
 	// Initialize the system
@@ -173,43 +170,20 @@ void Terrain3D::_destroy_mouse_picking() {
 }
 
 /**
- * If running in the editor, recurses into the editor scene tree to find the editor cameras and grabs the first one.
+ * If running in the editor, grab the first editor viewport camera.
  * The edited_scene_root is excluded in case the user already has a Camera3D in their scene.
  */
 void Terrain3D::_grab_camera() {
 	if (Engine::get_singleton()->is_editor_hint()) {
-		EditorScript temp_editor_script;
-		EditorInterface *editor_interface = temp_editor_script.get_editor_interface();
-		TypedArray<Camera3D> cam_array = TypedArray<Camera3D>();
-		_find_cameras(editor_interface->get_editor_main_screen()->get_children(), editor_interface->get_edited_scene_root(), cam_array);
-		if (!cam_array.is_empty()) {
-			LOG(DEBUG, "Connecting to the first editor camera");
-			_camera = Object::cast_to<Camera3D>(cam_array[0]);
-		}
+		LOG(DEBUG, "Grabbing the first editor viewport camera");
+		_camera = EditorInterface::get_singleton()->get_editor_viewport_3d(0)->get_camera_3d();
 	} else {
-		LOG(DEBUG, "Connecting to the in-game viewport camera");
+		LOG(DEBUG, "Grabbing the in-game viewport camera");
 		_camera = get_viewport()->get_camera_3d();
 	}
 	if (!_camera) {
 		set_process(false); // disable snapping
-		LOG(ERROR, "Cannot find active camera. Stopping _process()");
-	}
-}
-
-/**
- * Recursive helper function for _grab_camera().
- * DEPRECATED - Remove when moving to 4.2 and use EditorInterface.get_editor_viewport_3d(i).get_camera_3d()
- */
-void Terrain3D::_find_cameras(TypedArray<Node> from_nodes, Node *excluded_node, TypedArray<Camera3D> &cam_array) {
-	for (int i = 0; i < from_nodes.size(); i++) {
-		Node *node = Object::cast_to<Node>(from_nodes[i]);
-		if (node != excluded_node) {
-			_find_cameras(node->get_children(), excluded_node, cam_array);
-		}
-		if (node->is_class("Camera3D")) {
-			LOG(DEBUG, "Found a Camera3D at: ", node->get_path());
-			cam_array.push_back(node);
-		}
+		LOG(ERROR, "Cannot find the active camera. Set it manually with Terrain3D.set_camera(). Stopping _process()");
 	}
 }
 
@@ -805,6 +779,48 @@ void Terrain3D::set_show_debug_collision(bool p_enabled) {
 	}
 }
 
+void Terrain3D::set_collision_layer(uint32_t p_layers) {
+	LOG(INFO, "Setting collision layers: ", p_layers);
+	_collision_layer = p_layers;
+	if (_show_debug_collision) {
+		if (_debug_static_body != nullptr) {
+			_debug_static_body->set_collision_layer(_collision_layer);
+		}
+	} else {
+		if (_static_body.is_valid()) {
+			PhysicsServer3D::get_singleton()->body_set_collision_layer(_static_body, _collision_layer);
+		}
+	}
+}
+
+void Terrain3D::set_collision_mask(uint32_t p_mask) {
+	LOG(INFO, "Setting collision mask: ", p_mask);
+	_collision_mask = p_mask;
+	if (_show_debug_collision) {
+		if (_debug_static_body != nullptr) {
+			_debug_static_body->set_collision_mask(_collision_mask);
+		}
+	} else {
+		if (_static_body.is_valid()) {
+			PhysicsServer3D::get_singleton()->body_set_collision_mask(_static_body, _collision_mask);
+		}
+	}
+}
+
+void Terrain3D::set_collision_priority(real_t p_priority) {
+	LOG(INFO, "Setting collision priority: ", p_priority);
+	_collision_priority = p_priority;
+	if (_show_debug_collision) {
+		if (_debug_static_body != nullptr) {
+			_debug_static_body->set_collision_priority(_collision_priority);
+		}
+	} else {
+		if (_static_body.is_valid()) {
+			PhysicsServer3D::get_singleton()->body_set_collision_priority(_static_body, _collision_priority);
+		}
+	}
+}
+
 /**
  * Centers the terrain and LODs on a provided position. Y height is ignored.
  */
@@ -1103,7 +1119,7 @@ void Terrain3D::_notification(int p_what) {
 		}
 
 		case NOTIFICATION_TRANSFORM_CHANGED: {
-			//LOG(INFO, "NOTIFICATION_TRANSFORM_CHANGED");
+			set_transform(Transform3D());
 			break;
 		}
 
@@ -1140,7 +1156,6 @@ void Terrain3D::_notification(int p_what) {
 		}
 
 		case NOTIFICATION_EDITOR_POST_SAVE: {
-			//LOG(INFO, "NOTIFICATION_EDITOR_POST_SAVE");
 			break;
 		}
 	}
@@ -1189,8 +1204,6 @@ void Terrain3D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_collision_priority", "priority"), &Terrain3D::set_collision_priority);
 	ClassDB::bind_method(D_METHOD("get_collision_priority"), &Terrain3D::get_collision_priority);
 
-	// Expose 'update_aabbs' so it can be used in Callable. Not ideal.
-	ClassDB::bind_method(D_METHOD("update_aabbs"), &Terrain3D::update_aabbs);
 	ClassDB::bind_method(D_METHOD("get_intersection", "src_pos", "direction"), &Terrain3D::get_intersection);
 	ClassDB::bind_method(D_METHOD("bake_mesh", "lod", "filter"), &Terrain3D::bake_mesh);
 	ClassDB::bind_method(D_METHOD("generate_nav_mesh_source_geometry", "global_aabb", "require_nav"), &Terrain3D::generate_nav_mesh_source_geometry, DEFVAL(true));

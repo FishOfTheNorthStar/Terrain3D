@@ -3,10 +3,6 @@
 #ifndef TERRAIN3D_CLASS_H
 #define TERRAIN3D_CLASS_H
 
-#ifndef __FLT_MAX__
-#define __FLT_MAX__ FLT_MAX
-#endif
-
 #include <godot_cpp/classes/camera3d.hpp>
 #include <godot_cpp/classes/editor_plugin.hpp>
 #include <godot_cpp/classes/geometry_instance3d.hpp>
@@ -15,6 +11,7 @@
 #include <godot_cpp/classes/static_body3d.hpp>
 #include <godot_cpp/classes/sub_viewport.hpp>
 
+#include "constants.h"
 #include "terrain_3d_material.h"
 #include "terrain_3d_storage.h"
 #include "terrain_3d_texture_list.h"
@@ -23,12 +20,8 @@ using namespace godot;
 
 class Terrain3D : public Node3D {
 	GDCLASS(Terrain3D, Node3D);
+	CLASS_NAME();
 
-public:
-	// Constants
-	static inline const char *__class__ = "Terrain3D";
-
-private:
 	// Terrain state
 	String _version = "0.9.2-dev";
 	bool _is_inside_world = false;
@@ -87,7 +80,6 @@ private:
 	void _setup_mouse_picking();
 	void _destroy_mouse_picking();
 	void _grab_camera();
-	void _find_cameras(TypedArray<Node> from_nodes, Node *excluded_node, TypedArray<Camera3D> &cam_array);
 
 	void _clear(bool p_clear_meshes = true, bool p_clear_collision = true);
 	void _build(int p_mesh_lods, int p_mesh_size);
@@ -146,11 +138,11 @@ public:
 	bool get_collision_enabled() const { return _collision_enabled; }
 	void set_show_debug_collision(bool p_enabled);
 	bool get_show_debug_collision() const { return _show_debug_collision; }
-	void set_collision_layer(uint32_t p_layers) { _collision_layer = p_layers; }
+	void set_collision_layer(uint32_t p_layers);
 	uint32_t get_collision_layer() const { return _collision_layer; };
-	void set_collision_mask(uint32_t p_mask) { _collision_mask = p_mask; }
+	void set_collision_mask(uint32_t p_mask);
 	uint32_t get_collision_mask() const { return _collision_mask; };
-	void set_collision_priority(real_t p_priority) { _collision_priority = p_priority; }
+	void set_collision_priority(real_t p_priority);
 	real_t get_collision_priority() const { return _collision_priority; }
 
 	// Terrain methods

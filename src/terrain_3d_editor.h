@@ -12,11 +12,9 @@ using namespace godot;
 
 class Terrain3DEditor : public Object {
 	GDCLASS(Terrain3DEditor, Object);
+	CLASS_NAME();
 
-public:
-	// Constants
-	static inline const char *__class__ = "Terrain3DEditor";
-
+public: // Constants
 	enum Operation {
 		ADD,
 		SUBTRACT,
@@ -64,13 +62,14 @@ public:
 	};
 
 	class Brush {
-	private:
+		CLASS_NAME_STATIC("Terrain3DEditor::Brush");
+
 		Ref<Image> _image;
 		Vector2i _img_size;
 		Ref<ImageTexture> _texture;
 
 		int _size = 0;
-		real_t _opacity = 0.0f;
+		real_t _strength = 0.0f;
 		real_t _height = 0.0f;
 		int _texture_index = 0;
 		Color _color = COLOR_ROUGHNESS;
@@ -92,7 +91,7 @@ public:
 		Vector2i get_image_size() const { return _img_size; }
 
 		int get_size() const { return _size; }
-		real_t get_opacity() const { return _opacity; }
+		real_t get_strength() const { return _strength; }
 		real_t get_height() const { return _height; }
 		int get_texture_index() const { return _texture_index; }
 		Color get_color() const { return _color; }
