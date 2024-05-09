@@ -32,6 +32,12 @@ public: // Constants
 		NEAREST,
 	};
 
+	enum NormalCalculation {
+		PIXEL,
+		VERTEX,
+		BY_DISTANCE
+	};
+
 private:
 	PRIVATE_MANAGED_VARS()
 
@@ -111,5 +117,6 @@ protected:
 
 VARIANT_ENUM_CAST(Terrain3DMaterial::WorldBackground);
 VARIANT_ENUM_CAST(Terrain3DMaterial::TextureFiltering);
+VARIANT_ENUM_CAST(Terrain3DMaterial::NormalCalculation);
 
 #endif // TERRAIN3D_MATERIAL_CLASS_H

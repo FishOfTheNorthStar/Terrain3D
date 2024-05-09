@@ -152,6 +152,7 @@
     <ClInclude Include="src\propsets\__PROPSETS.h" />
     <ClInclude Include="src\register_types.h" />
     <ClInclude Include="src\propsets\_BLENDING.h" />
+    <ClInclude Include="src\propsets\_NORMALS.h" />
     <ClInclude Include="src\terrain_3d.h" />
     <ClInclude Include="src\terrain_3d_editor.h" />
     <ClInclude Include="src\logger.h" />

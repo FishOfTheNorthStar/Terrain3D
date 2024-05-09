@@ -98,8 +98,12 @@ float get_height(vec2 uv) {
 vec3 get_normal(vec2 uv, out vec3 tangent, out vec3 binormal) {
 	float u, v, height;
 	vec3 normal;
-	// Use vertex normals within radius of vertex_normals_distance, and along region borders.
-	if (v_region_border_mask > 0.5 || v_vertex_xz_dist < vertex_normals_distance) {
+	// Use vertex normals within radius of _normals_distance, and along region borders.
+	if (v_region_border_mask > 0.5 
+	#if defined(NORMALS_BY_DISTANCE) 
+	|| v_vertex_xz_dist < _normals_distance
+	#endif
+	) {
 		normal = normalize(v_normal);
 	} else {
 		height = get_height(uv);
@@ -278,11 +282,17 @@ void fragment() {
 	vec2 uv2 = UV2 + v_uv2_offset;
 
 	// Calculate Terrain Normals. 4 lookups
-	vec3 w_tangent, w_binormal;
-	vec3 w_normal = get_normal(uv2, w_tangent, w_binormal);
-	NORMAL = mat3(VIEW_MATRIX) * w_normal;
-	TANGENT = mat3(VIEW_MATRIX) * w_tangent;
-	BINORMAL = mat3(VIEW_MATRIX) * w_binormal;
+	#if defined(NORMALS_PER_VERTEX)
+		vec3 w_normal	= normalize(v_normal);
+		vec3 w_tangent	= cross(w_normal, vec3(0, 0, 1));
+		vec3 w_binormal	= cross(w_normal, w_tangent);
+	#else
+		vec3 w_tangent, w_binormal;
+		vec3 w_normal	= get_normal(uv2, w_tangent, w_binormal);
+	#endif
+	NORMAL		= mat3(VIEW_MATRIX) * w_normal;
+	TANGENT		= mat3(VIEW_MATRIX) * w_tangent;
+	BINORMAL	= mat3(VIEW_MATRIX) * w_binormal;
 
 	// Idenfity 4 vertices surrounding this pixel
 	vec2 texel_pos = uv;

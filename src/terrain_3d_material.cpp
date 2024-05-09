@@ -166,14 +166,19 @@ String Terrain3DMaterial::_get_current_defines() {
 	Array _defs;
 	_add_if_true(_defs, _blending_texture_filtering == LINEAR,	"TEXTURE_SAMPLERS_LINEAR",	"TEXTURE_SAMPLERS_NEAREST");
 	_add_if_true(_defs, _blending_by_height,					"HEIGHT_BLENDING_ENABLED");
-	_add_if_true(_defs, _tinting_enabled,					"NOISE_TINT_ENABLED");
+	_add_if_true(_defs, _tinting_enabled,						"NOISE_TINT_ENABLED");
 	_add_if_true(_defs, _auto_texturing_enabled,				"AUTO_TEXTURING_ENABLED");
+	_add_if_true(_defs, _multi_scaling_enabled,					"MULTI_SCALING_ENABLED");
+	_add_if_true(_defs, _uv_distortion_enabled,					"UV_DISTORTION_ENABLED");
+
 	_add_if_true(_defs, _bg_world_fill >= NOISE,				"BG_WORLD_ENABLED");
 	_add_if_true(_defs, _bg_world_fill == FLAT,					"BG_FLAT_ENABLED");
 	_add_if_true(_defs, _bg_world_fill == NONE,					"BG_NONE");
-	_add_if_true(_defs, _multi_scaling_enabled,					"MULTI_SCALING_ENABLED");
-	_add_if_true(_defs, _uv_distortion_enabled,					"UV_DISTORTION_ENABLED");
-	
+
+	_add_if_true(_defs, _normals_quality == PIXEL,				"NORMALS_PER_PIXEL");
+	_add_if_true(_defs, _normals_quality == VERTEX,				"NORMALS_PER_VERTEX");
+	_add_if_true(_defs, _normals_quality == BY_DISTANCE,		"NORMALS_BY_DISTANCE");
+
 	_add_if_true(_defs, _debug_view_checkered,			"DEBUG_CHECKERED");
 	_add_if_true(_defs, _debug_view_grey,				"DEBUG_GREY");
 	_add_if_true(_defs, _debug_view_heightmap,			"DEBUG_HEIGHTMAP");
@@ -704,6 +709,9 @@ void Terrain3DMaterial::_bind_methods() {
 	BIND_ENUM_CONSTANT(NOISE);
 	BIND_ENUM_CONSTANT(LINEAR);
 	BIND_ENUM_CONSTANT(NEAREST);
+	BIND_ENUM_CONSTANT(PIXEL);
+	BIND_ENUM_CONSTANT(VERTEX);
+	BIND_ENUM_CONSTANT(BY_DISTANCE);
 
 	// Private
 	ClassDB::bind_method(D_METHOD("_set_shader_parameters", "dict"), &Terrain3DMaterial::_set_shader_parameters);
