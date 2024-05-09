@@ -200,6 +200,7 @@
     <None Include="project\addons\terrain_3d\shader\core\t3d_managed_uniforms.gdshaderinc" />
     <None Include="project\addons\terrain_3d\shader\core\t3d_managed_varyings.gdshaderinc" />
     <None Include="project\addons\terrain_3d\shader\core\t3d_material_def.gdshaderinc" />
+    <None Include="project\addons\terrain_3d\shader\core\t3d_standard_functions.gdshaderinc" />
     <None Include="project\addons\terrain_3d\shader\core\t3d_standard_header.gdshaderinc" />
     <None Include="project\addons\terrain_3d\shader\mods\t3d_debug_view.gdshaderinc" />
     <None Include="project\addons\terrain_3d\shader\mods\t3d_uv_distort_funcs.gdshaderinc" />

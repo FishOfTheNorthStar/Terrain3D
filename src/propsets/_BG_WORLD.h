@@ -93,15 +93,15 @@ don't raise octaves so much it impacts frame rate.
 		_UPDSH_WORLD(blend_near)\
 		_UPDSH_WORLD(blend_far)\
 	UPDATE_GRP_END()\
-	SETUPD_WORLD(fill,			WorldBackground, "Background World Fill: ")\
-	_SETPR_WORLD(max_octaves,	int,	"Background Noise Max Octaves: ")\
-	_SETPR_WORLD(min_octaves,	int,	"Background Noise Max Octaves: ")\
-	_SETPR_WORLD(lod_distance,	float,	"Background Noise LOD Distance: ")\
-	_SETPR_WORLD(scale,			float,	"Background Noise Scale: ")\
-	_SETPR_WORLD(height,		float,	"Background Noise Height: ")\
-	_SETPR_WORLD(offset,		Vector3,"Background Noise Offset: ")\
-	_SETPR_WORLD(blend_near,	float,	"Background Noise Blend Near: ")\
-	_SETPR_WORLD(blend_far,		float,	"Background Noise Blend Far: ")
+	SETUPD_WORLD(fill,			WorldBackground, "Fill: ")\
+	_SETPR_WORLD(max_octaves,	int,	"Max Octaves: ")\
+	_SETPR_WORLD(min_octaves,	int,	"Min Octaves: ")\
+	_SETPR_WORLD(lod_distance,	float,	"LOD Distance: ")\
+	_SETPR_WORLD(scale,			float,	"Scale: ")\
+	_SETPR_WORLD(height,		float,	"Height: ")\
+	_SETPR_WORLD(offset,		Vector3,"Offset: ")\
+	_SETPR_WORLD(blend_near,	float,	"Blend Near: ")\
+	_SETPR_WORLD(blend_far,		float,	"Blend Far: ")
 
 #pragma endregion _BG_WORLD_
 // ################################################################################

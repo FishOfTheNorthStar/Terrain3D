@@ -67,9 +67,9 @@ portions of the other.
 	UPDATE_GRP_START_CON(blending,	true == true )\
 		_UPDSH_BLEND(sharpness)\
 	UPDATE_GRP_END()\
-	_SETPR_BLEND(sharpness,			float,				"Blending Sharpness: ")\
-	SETUPD_BLEND(texture_filtering,	TextureFiltering,	"Texture Filtering: ")\
-	SETUPD_BLEND(by_height,			bool,				"Enable Height Blending: ")
+	_SETPR_BLEND(sharpness,			float,				"Sharpness: ")\
+	SETUPD_BLEND(texture_filtering,	TextureFiltering,	"Filtering: ")\
+	SETUPD_BLEND(by_height,			bool,				"Height Blending Enabled: ")
 
 #pragma endregion _BLENDING_
 // ################################################################################

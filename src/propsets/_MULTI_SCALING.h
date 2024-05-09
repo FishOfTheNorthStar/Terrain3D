@@ -77,12 +77,12 @@ texture. The two blend together at a specified distance.
 		_UPDSH_MULTI(near)\
 		_UPDSH_MULTI(far)\
 	UPDATE_GRP_END()\
-	SETUPD_MULTI(enabled,		bool,	"Enable texture multi-scaling: ")\
-	_SETPR_MULTI(texture,		int,	"Multi Scale Texture: ")\
-	_SETPR_MULTI(distant_size,	float,	"Multi Scale Micro Size: ")\
-	_SETPR_MULTI(near_size,	float,	"Multi Scale Macro Size: ")\
-	_SETPR_MULTI(near,			float,	"Dual Scale Near Range: ")\
-	_SETPR_MULTI(far,			float,	"Dual Scale Far Range: ")
+	SETUPD_MULTI(enabled,		bool,	"Enabled: ")\
+	_SETPR_MULTI(texture,		int,	"Texture ID: ")\
+	_SETPR_MULTI(distant_size,	float,	"Distant Size: ")\
+	_SETPR_MULTI(near_size,		float,	"Near Size: ")\
+	_SETPR_MULTI(near,			float,	"Near Range: ")\
+	_SETPR_MULTI(far,			float,	"Far Range: ")
 
 #pragma endregion _MULTI_SCALING_
 // ################################################################################

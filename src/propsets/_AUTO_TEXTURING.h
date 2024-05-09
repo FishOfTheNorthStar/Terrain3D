@@ -68,11 +68,11 @@ Enables selecting two texture IDs that will automatically be applied to the terr
 		_UPDSH_AUTOS(base_texture)\
 		_UPDSH_AUTOS(overlay_texture)\
 	UPDATE_GRP_END()\
-	SETUPD_AUTOS(enabled,			bool,	"Enable auto shader: ")\
-	_SETPR_AUTOS(slope,				float,	"Auto Shader Slope: ")\
-	_SETPR_AUTOS(height_reduction,	float,	"Auto Shader Height Reduction: ")\
-	_SETPR_AUTOS(base_texture,		int,	"Auto Shader Base Texture: ")\
-	_SETPR_AUTOS(overlay_texture,	int,	"Auto Shader Overlay Texture: ")
+	SETUPD_AUTOS(enabled,			bool,	"Enabled: ")\
+	_SETPR_AUTOS(slope,				float,	"Slope: ")\
+	_SETPR_AUTOS(height_reduction,	float,	"Height Reduction: ")\
+	_SETPR_AUTOS(base_texture,		int,	"Base Texture: ")\
+	_SETPR_AUTOS(overlay_texture,	int,	"Overlay Texture: ")
 #pragma endregion _AUTO_TEXTURING_
 // ################################################################################
 #endif

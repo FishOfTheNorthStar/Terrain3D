@@ -61,9 +61,9 @@ is. You can adjust the size and power of the effect.
 		_UPDSH_UVDIST(size)\
 		_UPDSH_UVDIST(power)\
 	UPDATE_GRP_END()\
-	SETUPD_UVDIST(enabled,	bool,	"Enable UV Distortion: ")\
-	_SETPR_UVDIST(size,		float,	"UV Distortion Size: ")\
-	_SETPR_UVDIST(power,	float,	"UV Distortion Power: ")
+	SETUPD_UVDIST(enabled,	bool,	"Enabled: ")\
+	_SETPR_UVDIST(size,		float,	"Size: ")\
+	_SETPR_UVDIST(power,	float,	"Power: ")
 
 #pragma endregion _UV_DISTORTION_
 // ################################################################################

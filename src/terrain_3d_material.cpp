@@ -692,7 +692,11 @@ void Terrain3DMaterial::_safe_material_set_param(StringName _param, Variant _val
 	if (_initialized && _material.is_valid()) {
 		RS->material_set_param(_material, _param, _value); } }
 
+
+
+
 MAKE_MANAGED_FUNCTIONS()
+
 void Terrain3DMaterial::_bind_methods() {
 	BIND_MANAGED_VARS()
 	BIND_ENUM_CONSTANT(NONE);

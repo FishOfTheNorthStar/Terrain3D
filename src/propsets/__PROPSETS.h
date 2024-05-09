@@ -59,6 +59,7 @@
 	//	LOG(INFO, s_log_desc, p_value) 
 	#define __SETC__(m_bind_id, m_type, s_log_desc, f_after) \
 	void Terrain3DMaterial::set_##m_bind_id(m_type p_value) { \
+		LOG(INFO, s_log_desc, _##m_bind_id);\
 		_##m_bind_id = p_value; \
 		f_after; }
 

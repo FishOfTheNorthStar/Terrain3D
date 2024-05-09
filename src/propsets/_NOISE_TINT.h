@@ -108,6 +108,3 @@ garish tones.
 #pragma endregion _NOISE_TINT_
 // ################################################################################
 #endif
-
-//		_set("_noise_tint_texture", _noise_tint_texture  );\
-//	__SETC__(noise_tint_texture,	Ref<Texture2D>,	"Tint Noise Texture: ", if(_noise_tint_texture.is_valid()) { RS->material_set_param(_material, "_noise_tint_texture", _noise_tint_texture->get_rid() ); } )\
