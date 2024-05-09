@@ -12,7 +12,7 @@
 #include "propsets/_BLENDING.h"
 #include "propsets/_MULTI_SCALING.h"
 #include "propsets/_BG_WORLD.h"
-#include "propsets/_NOISE_TINT.h"
+#include "propsets/_TINTING.h"
 #include "propsets/_AUTO_TEXTURING.h"
 #include "propsets/_UV_DISTORTION.h"
 #include "propsets/_DEBUG_VIEWS.h"
@@ -73,7 +73,7 @@ within the generated shader, so if ever this happens it's not a big deal.
 	HELP_BLEND()\
 	HELP_MULTI()\
 	HELP_BG_WORLD()\
-	HELP_NOISE_TINT()\
+	HELP_TINTING()\
 	HELP_AUTO_TEXTURING()\
 	HELP_UVDIST()\
 	HELP_DEBUG()\
@@ -84,7 +84,7 @@ within the generated shader, so if ever this happens it's not a big deal.
 	MAKE_BLENDING_FUNCTIONS()\
 	MAKE_MULTI_SCALING_FUNCTIONS()\
 	MAKE_BG_WORLD_FUNCTIONS()\
-	MAKE_NOISE_TINT_FUNCTIONS()\
+	MAKE_TINTING_FUNCTIONS()\
 	MAKE_AUTO_TEXTURING_FUNCTIONS()\
 	MAKE_UV_DISTORTION_FUNCTIONS()\
 	MAKE_DEBUG_VIEW_FUNCTIONS()
@@ -94,7 +94,7 @@ within the generated shader, so if ever this happens it's not a big deal.
 	BIND_BLENDING_VARS()\
 	BIND_MULTI_SCALING_VARS()\
 	BIND_BG_WORLD_VARS()\
-	BIND_NOISE_TINT_VARS()\
+	BIND_TINTING_VARS()\
 	BIND_AUTO_TEXTURING_VARS()\
 	BIND_UV_DISTORTION_VARS()\
 	BIND_DEBUG_VIEW_VARS()
@@ -106,7 +106,7 @@ within the generated shader, so if ever this happens it's not a big deal.
 	PROPS_BLENDING()\
 	PROPS_MULTI_SCALING()\
 	PROPS_BG_WORLD()\
-	PROPS_NOISE_TINT()\
+	PROPS_TINTING()\
 	PROPS_AUTO_TEXTURING()\
 	PROPS_UV_DISTORTION()\
 	PROPS_DEBUG_VIEW()
@@ -115,7 +115,7 @@ within the generated shader, so if ever this happens it's not a big deal.
 	PRIV_BLENDING_VARS()\
 	PRIV_MULTI_SCALING_VARS()\
 	PRIV_BG_WORLD_VARS()\
-	PRIV_NOISE_TINT_VARS()\
+	PRIV_TINTING_VARS()\
 	PRIV_AUTO_TEXTURING_VARS()\
 	PRIV_UV_DISTORTION_VARS()\
 	PRIV_DEBUG_VIEW_VARS()
@@ -125,7 +125,7 @@ within the generated shader, so if ever this happens it's not a big deal.
 	PUBLIC_BLENDING_FUNCS()\
 	PUBLIC_MULTI_SCALING_FUNCS()\
 	PUBLIC_BG_WORLD_FUNCS()\
-	PUBLIC_NOISE_TINT_FUNCS()\
+	PUBLIC_TINTING_FUNCS()\
 	PUBLIC_AUTO_TEXTURING_FUNCS()\
 	PUBLIC_UV_DISTORTION_FUNCS()\
 	PUBLIC_DEBUG_VIEW_FUNCS()
@@ -134,7 +134,7 @@ within the generated shader, so if ever this happens it's not a big deal.
 	UPDATE_BLENDING()\
 	UPDATE_MULTI_SCALING()\
 	UPDATE_BG_WORLD()\
-	UPDATE_NOISE_TINT()\
+	UPDATE_TINTING()\
 	UPDATE_AUTO_TEXTURING()\
 	UPDATE_UV_DISTORTION()
 

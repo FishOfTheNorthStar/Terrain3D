@@ -323,7 +323,7 @@ void fragment() {
 		vec4( (weights0.x * _w01y), (weights1.x * _w01y) ), 
 		clamp ( 
 	#if defined(NOISE_TINT_ENABLED)
-		texture(_noise_tint_texture, uv*(1./(_noise_tint_noise3_scale*10000.))).r +
+		texture(_tinting_texture, uv*(1./(_tinting_noise3_scale*10000.))).r +
 	#endif
 		vec4 ( mat[0].alb_ht.a, mat[1].alb_ht.a, mat[2].alb_ht.a, mat[3].alb_ht.a ), vec4(0.), vec4(1.) ) );
 
@@ -363,10 +363,10 @@ void fragment() {
 
 	#if defined(NOISE_TINT_ENABLED)
 		// Macro variation. 2 Lookups
-		float noise1 = texture(_noise_tint_texture, rotate(uv*(1./(_noise_tint_noise1_scale*10000.)), cos(_noise_tint_noise1_angle), sin(_noise_tint_noise1_angle)) + _noise_tint_noise1_offset).r;
-		float noise2 = texture(_noise_tint_texture, uv*(1./(_noise_tint_noise2_scale*10000.))).r;
-		vec3 macrov = mix(_noise_tint_macro_variation1, vec3(1.), clamp(noise1 + v_vertex_xz_dist*.0002, 0., 1.));
-		macrov *= mix(_noise_tint_macro_variation2, vec3(1.), clamp(noise2 + v_vertex_xz_dist*.0002, 0., 1.));
+		float noise1 = texture(_tinting_texture, rotate(uv*(1./(_tinting_noise1_scale*10000.)), cos(_tinting_noise1_angle), sin(_tinting_noise1_angle)) + _tinting_noise1_offset).r;
+		float noise2 = texture(_tinting_texture, uv*(1./(_tinting_noise2_scale*10000.))).r;
+		vec3 macrov = mix(_tinting_macro_variation1, vec3(1.), clamp(noise1 + v_vertex_xz_dist*.0002, 0., 1.));
+		macrov *= mix(_tinting_macro_variation2, vec3(1.), clamp(noise2 + v_vertex_xz_dist*.0002, 0., 1.));
 	#else
 		vec3 macrov = vec3(1.);
 	#endif

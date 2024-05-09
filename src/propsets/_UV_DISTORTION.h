@@ -18,6 +18,12 @@
 UV Distortion slightly (or drastically) shifts the textures around 
 at a vertex level in a random way based on where that point in space 
 is. You can adjust the size and power of the effect.
+
+This is still a WIP so the settings a bit finicky.  The larger the 
+current size is, the more power is needed to have visible effect.  
+So at low sizes, power has much more effect and can look overly 
+distorted.  In the future the effect power may become better unified 
+to the effect size.
 )")
 #pragma endregion _HELP_
 
@@ -45,9 +51,9 @@ is. You can adjust the size and power of the effect.
 	GETR_UVDIST(power,			float)
 
 #define BIND_UV_DISTORTION_VARS() \
-	BIND_UVDIST(enabled,			enabled)\
-	BIND_UVDIST(size,				scale)\
-	BIND_UVDIST(power,				power)
+	BIND_UVDIST(enabled,		enabled)\
+	BIND_UVDIST(size,			scale)\
+	BIND_UVDIST(power,			power)
 
 #define PROPS_UV_DISTORTION()\
 	ADD_GROUP("UV Distortion", "uv_distortion_");\

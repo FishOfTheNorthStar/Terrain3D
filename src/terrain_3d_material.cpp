@@ -166,7 +166,7 @@ String Terrain3DMaterial::_get_current_defines() {
 	Array _defs;
 	_add_if_true(_defs, _blending_texture_filtering == LINEAR,	"TEXTURE_SAMPLERS_LINEAR",	"TEXTURE_SAMPLERS_NEAREST");
 	_add_if_true(_defs, _blending_by_height,					"HEIGHT_BLENDING_ENABLED");
-	_add_if_true(_defs, _noise_tint_enabled,					"NOISE_TINT_ENABLED");
+	_add_if_true(_defs, _tinting_enabled,					"NOISE_TINT_ENABLED");
 	_add_if_true(_defs, _auto_texturing_enabled,				"AUTO_TEXTURING_ENABLED");
 	_add_if_true(_defs, _bg_world_fill >= NOISE,				"BG_WORLD_ENABLED");
 	_add_if_true(_defs, _bg_world_fill == FLAT,					"BG_FLAT_ENABLED");
@@ -281,7 +281,7 @@ void Terrain3DMaterial::_update_shader() {
 	}
 
 	// If no noise texture, generate one
-	if (_noise_tint_texture == Ref<Texture2D>() ) {
+	if (_tinting_texture == Ref<Texture2D>() ) {
 		LOG(INFO, "Generating default noise_texture for shader");
 		Ref<FastNoiseLite> fnoise;
 		fnoise.instantiate();
@@ -313,10 +313,10 @@ void Terrain3DMaterial::_update_shader() {
 		noise_tex->set_generate_mipmaps(true);
 		noise_tex->set_noise(fnoise);
 		noise_tex->set_color_ramp(curve);
-		_noise_tint_texture = noise_tex;
+		_tinting_texture = noise_tex;
 	}
 
-	if(_noise_tint_texture.is_valid()) { RS->material_set_param(_material, "_noise_tint_texture", _noise_tint_texture->get_rid() ); }
+	if(_tinting_texture.is_valid()) { RS->material_set_param(_material, "_tinting_texture", _tinting_texture->get_rid() ); }
 	
 	// Set specific managed shader parameters
 	UPDATE_MANAGED_VARS()

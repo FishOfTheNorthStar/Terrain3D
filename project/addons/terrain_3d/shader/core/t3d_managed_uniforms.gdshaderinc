@@ -27,13 +27,13 @@ uniform float	_region_texel_size = 0.0009765625;	// = 1/1024
 uniform sampler2DArray	_color_maps				: source_color, filter_linear_mipmap_anisotropic, repeat_disable;
 uniform sampler2DArray	_texture_array_albedo	: source_color, filter_linear_mipmap_anisotropic, repeat_enable;
 uniform sampler2DArray	_texture_array_normal	: hint_normal, filter_linear_mipmap_anisotropic, repeat_enable;
-uniform sampler2D		_noise_tint_texture		: source_color, filter_linear_mipmap_anisotropic, repeat_enable;
+uniform sampler2D		_tinting_texture		: source_color, filter_linear_mipmap_anisotropic, repeat_enable;
 #else
 // TEXTURE_SAMPLERS_NEAREST
 uniform sampler2DArray	_color_maps				: source_color, filter_nearest_mipmap_anisotropic, repeat_disable;
 uniform sampler2DArray	_texture_array_albedo	: source_color, filter_nearest_mipmap_anisotropic, repeat_enable;
 uniform sampler2DArray	_texture_array_normal	: hint_normal, filter_nearest_mipmap_anisotropic, repeat_enable;
-uniform sampler2D		_noise_tint_texture		: source_color, filter_nearest_mipmap_anisotropic, repeat_enable;
+uniform sampler2D		_tinting_texture		: source_color, filter_nearest_mipmap_anisotropic, repeat_enable;
 #endif
 
 // Texture Data Arrays:
@@ -61,13 +61,13 @@ uniform float _blending_sharpness = 0.87;
 #endif  // ---------------------------------------------------------------------
 #if defined(NOISE_TINT_ENABLED)
 	// Generic noise at 3 scales, which can be used for anything 
-	uniform vec3	_noise_tint_macro_variation1;
-	uniform vec3	_noise_tint_macro_variation2;
-	uniform float	_noise_tint_noise1_scale;
-	uniform float	_noise_tint_noise1_angle;
-	uniform vec2	_noise_tint_noise1_offset = vec2(0.5);
-	uniform float	_noise_tint_noise2_scale;
-	uniform float	_noise_tint_noise3_scale;
+	uniform vec3	_tinting_macro_variation1;
+	uniform vec3	_tinting_macro_variation2;
+	uniform float	_tinting_noise1_scale;
+	uniform float	_tinting_noise1_angle;
+	uniform vec2	_tinting_noise1_offset = vec2(0.5);
+	uniform float	_tinting_noise2_scale;
+	uniform float	_tinting_noise3_scale;
 #endif  // ---------------------------------------------------------------------
 #if defined(BG_WORLD_ENABLED)
 	uniform int		_bg_world_max_octaves = 6;

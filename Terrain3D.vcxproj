@@ -146,7 +146,7 @@
     <ClInclude Include="src\propsets\_AUTO_TEXTURING.h" />
     <ClInclude Include="src\propsets\_DEBUG_VIEWS.h" />
     <ClInclude Include="src\propsets\_MULTI_SCALING.h" />
-    <ClInclude Include="src\propsets\_NOISE_TINT.h" />
+    <ClInclude Include="src\propsets\_TINTING.h" />
     <ClInclude Include="src\propsets\_UV_DISTORTION.h" />
     <ClInclude Include="src\propsets\_BG_WORLD.h" />
     <ClInclude Include="src\propsets\__PROPSETS.h" />
