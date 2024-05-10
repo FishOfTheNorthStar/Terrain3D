@@ -575,7 +575,7 @@ void Terrain3DMaterial::_get_property_list(List<PropertyInfo> *p_list) const {
 			p_list->push_back(pi);
 
 			// Populate list of public parameters for current shader
- 			_active_params.push_back(name);
+			_active_params.push_back(name);
 
 			// Store this param in a dictionary that is saved in the resource file
 			// Initially set with default value
@@ -625,7 +625,7 @@ bool Terrain3DMaterial::_property_get_revert(const StringName &p_name, Variant &
 }
 
 bool Terrain3DMaterial::_set(const StringName &p_name, const Variant &p_property) {
-	IS_INIT_COND(!_active_params.has(p_name), Resource::_property_can_revert(p_name));
+	IS_INIT_COND(!_active_params.has(p_name), Resource::_set(p_name, p_property));
 	if (p_property.get_type() == Variant::NIL) {
 		RS->material_set_param(_material, p_name, Variant());
 		_shader_params.erase(p_name);
