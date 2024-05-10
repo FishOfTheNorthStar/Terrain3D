@@ -76,6 +76,13 @@ private:
 	void _set_shader_parameters(const Dictionary &p_dict);
 	Dictionary _get_shader_parameters() const { return _shader_params; }
 
+	int get_octaves_by_distance(float d);
+	float get_unweighted_generated_height(Vector3 worldPos, int octaves);
+	float noise_type1(Vector2 p, int octaves);
+	Vector3 noise2D(Vector2 x);
+	float ihashv2(Vector2i iv);
+
+
 public:
 	Terrain3DMaterial(){};
 	void initialize(int p_region_size);
