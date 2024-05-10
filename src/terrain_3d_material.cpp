@@ -231,8 +231,6 @@ void Terrain3DMaterial::_update_shader_if_defines_have_changed() {
 		_update_shader(); } }
 
 void Terrain3DMaterial::_update_shader() {
-//	if (!_initialized || _material == Variant::NIL) {
-//		return; }
 	IS_INIT(NOP);
 	LOG(INFO, "Updating shader");
 	RID shader_rid;
