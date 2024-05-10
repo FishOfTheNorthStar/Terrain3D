@@ -675,7 +675,8 @@ void Terrain3DStorage::import_images(const TypedArray<Image> &p_images, Vector3 
 	Vector3 descaled_position = p_global_position / vertex_spacing;
 	int max_dimension = _region_size * REGION_MAP_SIZE / 2;
 	if ((abs(descaled_position.x) > max_dimension) || (abs(descaled_position.z) > max_dimension)) {
-		LOG(ERROR, "Specify a position within +/-", Vector3(max_dimension, 0.f, max_dimension) * vertex_spacing);		return;
+		LOG(ERROR, "Specify a position within +/-", Vector3(max_dimension, 0.f, max_dimension) * vertex_spacing);
+		return;
 	}
 	if ((descaled_position.x + img_size.x > max_dimension) ||
 			(descaled_position.z + img_size.y > max_dimension)) {
