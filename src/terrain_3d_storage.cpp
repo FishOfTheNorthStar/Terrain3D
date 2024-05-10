@@ -912,7 +912,7 @@ Vector3 Terrain3DStorage::get_mesh_vertex(int32_t p_lod, HeightFilter p_filter, 
 			height = get_height(p_global_position);
 			for (int32_t dx = -step / 2; dx < step / 2; dx += 1) {
 				for (int32_t dz = -step / 2; dz < step / 2; dz += 1) {
-					Vector3 position = p_global_position + Vector3(dx, 0.f, dz) *  _terrain->get_mesh_vertex_spacing();
+					Vector3 position = p_global_position + Vector3(dx, 0.f, dz) * _terrain->get_mesh_vertex_spacing();
 					if (is_hole(get_control(position))) {
 						height = NAN;
 						break;
